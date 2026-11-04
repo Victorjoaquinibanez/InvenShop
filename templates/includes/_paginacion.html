@@ -1,0 +1,34 @@
+{# Paginación que conserva los filtros (querystring sin "page") #}
+{% if is_paginated %}
+  <nav aria-label="Paginación" class="mt-4">
+    <ul class="pagination justify-content-center flex-wrap">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}" aria-label="Anterior">&laquo;</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+      {% endif %}
+
+      {% for numero in page_obj.paginator.get_elided_page_range %}
+        {% if numero == page_obj.number %}
+          <li class="page-item active" aria-current="page"><span class="page-link">{{ numero }}</span></li>
+        {% elif numero == page_obj.paginator.ELLIPSIS %}
+          <li class="page-item disabled"><span class="page-link">{{ numero }}</span></li>
+        {% else %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ numero }}">{{ numero }}</a>
+          </li>
+        {% endif %}
+      {% endfor %}
+
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}" aria-label="Siguiente">&raquo;</a>
+        </li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

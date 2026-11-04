@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load tienda %}
+
+{% block titulo %}Mis pedidos{% endblock %}
+
+{% block contenido %}
+<h1 class="h3 mb-4">Mis pedidos</h1>
+
+{% if pedidos %}
+  <div class="bg-white rounded shadow-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 tabla-responsive-sm">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">N°</th>
+            <th scope="col">Fecha</th>
+            <th scope="col">Estado</th>
+            <th scope="col" class="text-end">Unidades</th>
+            <th scope="col" class="text-end">Total</th>
+            <th scope="col"><span class="visually-hidden">Ver</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for pedido in pedidos %}
+            <tr>
+              <td class="fw-semibold">#{{ pedido.numero }}</td>
+              <td>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</td>
+              <td>{% badge_estado pedido.estado %}</td>
+              <td class="text-end">{{ pedido.cantidad_unidades|default:0 }}</td>
+              <td class="text-end fw-semibold">{{ pedido.total|pesos }}</td>
+              <td class="text-end"><a href="{{ pedido.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">Ver detalle</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% include 'includes/_paginacion.html' %}
+{% else %}
+  <div class="text-center text-muted py-5 bg-white rounded shadow-sm">
+    <i class="bi bi-bag fs-1 d-block mb-2"></i>
+    Todavía no hiciste ningún pedido.
+    <div class="mt-3"><a href="{% url 'catalogo:lista' %}" class="btn btn-marca">Ir al catálogo</a></div>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'panel/base_panel.html' %}
+{% load tienda %}
+
+{% block titulo %}Pedidos{% endblock %}
+
+{% block panel %}
+<h1 class="h3 mb-3">Pedidos</h1>
+
+<form method="get" class="card border-0 shadow-sm mb-3">
+  <div class="card-body row g-2 align-items-end">
+    {% include 'includes/_errores_form.html' with form=filtro %}
+    <div class="col-md-4">
+      <label class="form-label small mb-1" for="{{ filtro.q.id_for_label }}">{{ filtro.q.label }}</label>{{ filtro.q }}
+    </div>
+    <div class="col-sm-6 col-md-2">
+      <label class="form-label small mb-1" for="{{ filtro.estado.id_for_label }}">{{ filtro.estado.label }}</label>{{ filtro.estado }}
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small mb-1" for="{{ filtro.desde.id_for_label }}">{{ filtro.desde.label }}</label>{{ filtro.desde }}
+    </div>
+    <div class="col-6 col-md-2">
+      <label class="form-label small mb-1" for="{{ filtro.hasta.id_for_label }}">{{ filtro.hasta.label }}</label>{{ filtro.hasta }}
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+      <button type="submit" class="btn btn-marca flex-grow-1"><i class="bi bi-funnel"></i> Filtrar</button>
+      {% if request.GET %}<a href="{% url 'pedidos:gestion_lista' %}" class="btn btn-outline-secondary" aria-label="Quitar filtros"><i class="bi bi-x-lg"></i></a>{% endif %}
+    </div>
+  </div>
+</form>
+
+<div class="bg-white rounded shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 tabla-responsive-sm">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">N°</th>
+          <th scope="col">Fecha</th>
+          <th scope="col">Cliente</th>
+          <th scope="col">Estado</th>
+          <th scope="col" class="text-end">Unidades</th>
+          <th scope="col" class="text-end">Total</th>
+          <th scope="col"><span class="visually-hidden">Ver</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pedido in pedidos %}
+          <tr>
+            <td class="fw-semibold">#{{ pedido.numero }}</td>
+            <td>{{ pedido.fecha_creacion|date:"d/m/Y H:i" }}</td>
+            <td>{{ pedido.usuario.nombre_completo }}<div class="small text-muted">{{ pedido.usuario.email }}</div></td>
+            <td>{% badge_estado pedido.estado %}</td>
+            <td class="text-end">{{ pedido.cantidad_unidades|default:0 }}</td>
+            <td class="text-end fw-semibold text-nowrap">{{ pedido.total|pesos }}</td>
+            <td class="text-end"><a href="{{ pedido.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">Gestionar</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7" class="text-center text-muted py-4">No hay pedidos con esos filtros.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include 'includes/_paginacion.html' %}
+{% endblock %}

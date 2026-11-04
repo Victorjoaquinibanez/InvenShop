@@ -1,0 +1,75 @@
+{% extends 'panel/base_panel.html' %}
+{% load tienda %}
+
+{% block titulo %}Panel de gestión{% endblock %}
+
+{% block panel %}
+<h1 class="h3 mb-1">Hola, {{ user.nombre }}</h1>
+<p class="text-muted mb-4">Esto es lo que hay para atender hoy.</p>
+
+<div class="row g-3 mb-4">
+  {% for estado, cantidad in pedidos_por_estado %}
+    <div class="col-6 col-md-3">
+      <a href="{% url 'pedidos:gestion_lista' %}?estado={{ estado.value }}" class="card border-0 shadow-sm text-reset text-decoration-none tarjeta-numero h-100">
+        <div class="card-body">
+          <div class="small text-muted mb-2">{% badge_estado estado.value %}</div>
+          <div class="numero">{{ cantidad }}</div>
+          <div class="small text-muted">pedido{{ cantidad|pluralize }}</div>
+        </div>
+      </a>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Pedidos pendientes</h2>
+        <a href="{% url 'pedidos:gestion_lista' %}?estado=Pendiente" class="small">Ver todos</a>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for pedido in ultimos_pendientes %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <a href="{{ pedido.get_absolute_url }}" class="fw-semibold">#{{ pedido.numero }}</a>
+              <span class="small text-muted">· {{ pedido.usuario.nombre_completo }}</span>
+              <div class="small text-muted">{{ pedido.fecha_creacion|timesince }}</div>
+            </div>
+            <span class="fw-semibold text-nowrap">{{ pedido.total|pesos }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted">No hay pedidos pendientes.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="col-xl-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h2 class="h6 mb-0">Stock bajo (≤ {{ umbral_stock }})</h2>
+        <span class="small text-muted">{{ productos_activos }} activos · {{ productos_agotados }} agotado{{ productos_agotados|pluralize }}</span>
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for producto in stock_bajo %}
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+              <a href="{% url 'catalogo:producto_editar' producto.pk %}">{{ producto.nombre }}</a>
+              <div class="small text-muted">{{ producto.categoria.nombre }}</div>
+            </div>
+            <span class="badge text-bg-warning">{{ producto.stock }} u.</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-muted">Ningún producto con stock bajo.</li>
+        {% endfor %}
+      </ul>
+      {% if productos_agotados %}
+        <div class="card-footer bg-white">
+          <a href="{% url 'catalogo:gestion_productos' %}?estado=sin_stock" class="small">Ver los {{ productos_agotados }} agotados</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

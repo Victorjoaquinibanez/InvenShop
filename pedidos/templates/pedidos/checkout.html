@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Datos de envío{% endblock %}
+
+{% block contenido %}
+<h1 class="h3 mb-2">Finalizar compra</h1>
+{% include 'pedidos/_pasos.html' with paso=1 %}
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <h2 class="h5 mb-3">¿A dónde lo enviamos?</h2>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% include 'includes/_errores_form.html' %}
+          <div class="row">
+            <div class="col-12">{% with campo=form.direccion %}{% include 'includes/_campo.html' %}{% endwith %}</div>
+            <div class="col-sm-7">{% with campo=form.ciudad %}{% include 'includes/_campo.html' %}{% endwith %}</div>
+            <div class="col-sm-5">{% with campo=form.codigo_postal %}{% include 'includes/_campo.html' %}{% endwith %}</div>
+            <div class="col-12">{% with campo=form.telefono_contacto %}{% include 'includes/_campo.html' %}{% endwith %}</div>
+          </div>
+          <div class="d-flex justify-content-between">
+            <a href="{% url 'carrito:ver' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Volver al carrito</a>
+            <button type="submit" class="btn btn-marca">Revisar y confirmar <i class="bi bi-arrow-right"></i></button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">{% include 'pedidos/_resumen_carrito.html' %}</div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% load tienda %}
+<div class="card border-0 shadow-sm">
+  <div class="card-body">
+    <h2 class="h5 mb-3">Tu pedido</h2>
+    <ul class="list-unstyled mb-0">
+      {% for item in carrito %}
+        <li class="d-flex justify-content-between gap-2 py-1 border-bottom">
+          <span>{{ item.cantidad }} × {{ item.producto.nombre }}</span>
+          <span class="text-nowrap">{{ item.subtotal|pesos }}</span>
+        </li>
+      {% endfor %}
+    </ul>
+    <div class="d-flex justify-content-between fs-5 fw-bold mt-3">
+      <span>Total</span>
+      <span class="precio">{{ carrito.total|pesos }}</span>
+    </div>
+  </div>
+</div>

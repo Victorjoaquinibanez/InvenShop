@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{# Estructura común del panel de gestión: menú a la izquierda (arriba en celular) y contenido #}
+{% block contenido %}
+{% with seccion=request.resolver_match.url_name %}
+<div class="row g-4">
+  <aside class="col-lg-3 col-xl-2">
+    <nav class="menu-panel nav nav-pills flex-row flex-lg-column gap-1 bg-white rounded shadow-sm p-2" aria-label="Menú del panel">
+      <a class="nav-link {% if seccion == 'inicio' %}active{% endif %}" href="{% url 'panel:inicio' %}">
+        <i class="bi bi-speedometer2"></i> Inicio
+      </a>
+      {% if perms.pedidos.ver_todos_los_pedidos %}
+        <a class="nav-link {% if request.resolver_match.app_name == 'pedidos' %}active{% endif %}" href="{% url 'pedidos:gestion_lista' %}">
+          <i class="bi bi-receipt"></i> Pedidos
+        </a>
+      {% endif %}
+      {% if perms.catalogo.view_producto %}
+        <a class="nav-link {% if 'producto' in seccion %}active{% endif %}" href="{% url 'catalogo:gestion_productos' %}">
+          <i class="bi bi-box"></i> Productos
+        </a>
+      {% endif %}
+      {% if perms.catalogo.view_categoria %}
+        <a class="nav-link {% if 'categoria' in seccion %}active{% endif %}" href="{% url 'catalogo:gestion_categorias' %}">
+          <i class="bi bi-tags"></i> Categorías
+        </a>
+      {% endif %}
+      {% if perms.usuarios.view_usuario %}
+        <a class="nav-link {% if request.resolver_match.app_name == 'usuarios' %}active{% endif %}" href="{% url 'usuarios:gestion_lista' %}">
+          <i class="bi bi-people"></i> Usuarios
+        </a>
+      {% endif %}
+      {% if perms.pedidos.ver_reportes %}
+        <a class="nav-link {% if seccion == 'reportes' %}active{% endif %}" href="{% url 'panel:reportes' %}">
+          <i class="bi bi-bar-chart"></i> Reportes
+        </a>
+      {% endif %}
+    </nav>
+  </aside>
+
+  <section class="col-lg-9 col-xl-10">
+    {% block panel %}{% endblock %}
+  </section>
+</div>
+{% endwith %}
+{% endblock %}

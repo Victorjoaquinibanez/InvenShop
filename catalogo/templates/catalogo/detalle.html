@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load tienda %}
+
+{% block titulo %}{{ producto.nombre }}{% endblock %}
+
+{% block contenido %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'catalogo:lista' %}">Catálogo</a></li>
+    <li class="breadcrumb-item"><a href="{{ producto.categoria.get_absolute_url }}">{{ producto.categoria.nombre }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ producto.nombre }}</li>
+  </ol>
+</nav>
+
+<div class="row g-4 bg-white rounded shadow-sm p-3 p-md-4 mx-0">
+  <div class="col-md-6">
+    {% if producto.imagen %}
+      <img src="{{ producto.imagen.url }}" class="imagen-detalle rounded" alt="{{ producto.nombre }}">
+    {% else %}
+      <div class="imagen-producto-vacia rounded" aria-hidden="true"><i class="bi bi-image"></i></div>
+    {% endif %}
+  </div>
+
+  <div class="col-md-6 d-flex flex-column">
+    <a href="{{ producto.categoria.get_absolute_url }}" class="small text-muted text-decoration-none">{{ producto.categoria.nombre }}</a>
+    <h1 class="h2 mt-1">{{ producto.nombre }}</h1>
+    <p class="precio fs-2 mb-2">{{ producto.precio|pesos }}</p>
+
+    <p class="mb-3">
+      {% if producto.agotado %}
+        <span class="badge text-bg-dark"><i class="bi bi-x-circle"></i> Agotado</span>
+      {% elif producto.stock <= 5 %}
+        <span class="badge text-bg-warning"><i class="bi bi-exclamation-triangle"></i> ¡Últimas {{ producto.stock }} unidades!</span>
+      {% else %}
+        <span class="badge text-bg-success"><i class="bi bi-check-circle"></i> {{ producto.stock }} disponibles</span>
+      {% endif %}
+    </p>
+
+    <div class="mb-4" style="white-space: pre-line">{{ producto.descripcion|default:"Sin descripción." }}</div>
+
+    {% if not producto.agotado %}
+      <form method="post" action="{% url 'carrito:agregar' producto.pk %}" class="mt-auto row g-2 align-items-end">
+        {% csrf_token %}
+        <div class="col-4 col-lg-3">
+          <label for="{{ form_carrito.cantidad.id_for_label }}" class="form-label small">Cantidad</label>
+          {{ form_carrito.cantidad }}
+        </div>
+        <div class="col-8 col-lg-9">
+          <button type="submit" class="btn btn-marca btn-lg w-100"><i class="bi bi-cart-plus"></i> Agregar al carrito</button>
+        </div>
+      </form>
+    {% else %}
+      <button class="btn btn-secondary btn-lg mt-auto" disabled>Sin stock por el momento</button>
+    {% endif %}
+  </div>
+</div>
+
+{% if relacionados %}
+  <h2 class="h5 mt-5 mb-3">Más de {{ producto.categoria.nombre }}</h2>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-3">
+    {% for producto in relacionados %}
+      <div class="col">{% include 'catalogo/_tarjeta_producto.html' %}</div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

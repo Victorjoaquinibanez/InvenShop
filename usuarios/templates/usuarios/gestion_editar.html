@@ -1,0 +1,27 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block titulo %}{{ usuario_editado.nombre_completo }}{% endblock %}
+
+{% block panel %}
+<h1 class="h3 mb-1">{{ usuario_editado.nombre_completo }}</h1>
+<p class="text-muted">{{ usuario_editado.email }}</p>
+
+<div class="card border-0 shadow-sm" style="max-width: 620px">
+  <div class="card-body p-4">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include 'includes/_errores_form.html' %}
+      {% for campo in form %}{% include 'includes/_campo.html' %}{% endfor %}
+      <ul class="small text-muted">
+        <li><strong>Administrador:</strong> acceso total, incluida la gestión de usuarios y los reportes.</li>
+        <li><strong>Empleado:</strong> productos, categorías, stock y estado de los pedidos.</li>
+        <li><strong>Cliente:</strong> catálogo, carrito, sus pedidos y su perfil.</li>
+      </ul>
+      <div class="d-flex justify-content-end gap-2">
+        <a href="{% url 'usuarios:gestion_lista' %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-marca">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'panel/base_panel.html' %}
+
+{% block titulo %}Eliminar {{ object }}{% endblock %}
+
+{% block panel %}
+<div class="card border-0 shadow-sm" style="max-width: 620px">
+  <div class="card-body p-4">
+    <h1 class="h4"><i class="bi bi-exclamation-triangle text-danger"></i> Eliminar «{{ object }}»</h1>
+    <p>Esta acción no se puede deshacer.</p>
+    <p class="text-muted small">{{ aviso }}</p>
+    <form method="post" class="d-flex justify-content-end gap-2">
+      {% csrf_token %}
+      <a href="{{ volver_url }}" class="btn btn-outline-secondary">Cancelar</a>
+      <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

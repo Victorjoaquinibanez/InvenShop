@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block titulo %}Mi perfil{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    <h1 class="h3 mb-4">Mi perfil</h1>
+
+    <div class="card shadow-sm border-0 mb-4">
+      <div class="card-body p-4">
+        <dl class="row mb-4">
+          <dt class="col-sm-4">Email</dt>
+          <dd class="col-sm-8">{{ user.email }}</dd>
+          <dt class="col-sm-4">Rol</dt>
+          <dd class="col-sm-8">{{ user.get_rol_display }}</dd>
+          <dt class="col-sm-4">Miembro desde</dt>
+          <dd class="col-sm-8">{{ user.date_joined|date:"j \d\e F \d\e Y" }}</dd>
+        </dl>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% include 'includes/_errores_form.html' %}
+          <div class="row">
+            <div class="col-sm-6">{% with campo=form.nombre %}{% include 'includes/_campo.html' %}{% endwith %}</div>
+            <div class="col-sm-6">{% with campo=form.apellido %}{% include 'includes/_campo.html' %}{% endwith %}</div>
+            <div class="col-12">{% with campo=form.telefono %}{% include 'includes/_campo.html' %}{% endwith %}</div>
+          </div>
+          <div class="d-flex flex-wrap gap-2 justify-content-between">
+            <a href="{% url 'usuarios:cambiar_password' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-key"></i> Cambiar contraseña
+            </a>
+            <button type="submit" class="btn btn-marca">Guardar cambios</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

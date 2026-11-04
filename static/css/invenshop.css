@@ -1,0 +1,109 @@
+/* Estilos propios de InvenShop (sobre Bootstrap 5) */
+
+:root {
+  --marca: #1f3a5f;
+  --marca-oscuro: #152a45;
+  --acento: #f0b429;
+}
+
+.bg-marca { background-color: var(--marca); }
+.text-marca { color: var(--marca); }
+
+.btn-marca {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--marca);
+  --bs-btn-border-color: var(--marca);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--marca-oscuro);
+  --bs-btn-hover-border-color: var(--marca-oscuro);
+  --bs-btn-active-bg: var(--marca-oscuro);
+  --bs-btn-disabled-bg: var(--marca);
+  --bs-btn-disabled-border-color: var(--marca);
+}
+
+body { background-color: #f5f6f8; }
+
+.contador-carrito {
+  position: absolute;
+  top: 2px;
+  right: -6px;
+  font-size: .7rem;
+}
+
+/* ----- Catálogo ----- */
+
+.tarjeta-producto {
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.tarjeta-producto:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
+}
+
+.imagen-producto {
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  width: 100%;
+  background: #e9ecef;
+}
+
+.imagen-producto-vacia {
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e9ecef, #dee2e6);
+  color: #adb5bd;
+  font-size: 3rem;
+}
+
+.imagen-detalle {
+  max-height: 460px;
+  object-fit: contain;
+  width: 100%;
+  background: #fff;
+}
+
+.producto-agotado .imagen-producto,
+.producto-agotado .imagen-producto-vacia {
+  filter: grayscale(1);
+  opacity: .7;
+}
+
+.precio { font-weight: 700; color: var(--marca); }
+
+.lista-categorias .list-group-item.active {
+  background-color: var(--marca);
+  border-color: var(--marca);
+}
+
+/* ----- Panel ----- */
+
+.menu-panel .nav-link {
+  color: #495057;
+  border-radius: .375rem;
+}
+.menu-panel .nav-link:hover { background: #e9ecef; }
+.menu-panel .nav-link.active {
+  background: var(--marca);
+  color: #fff;
+}
+
+.tarjeta-numero .numero {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.input-stock { width: 5.5rem; }
+
+.barra-reporte {
+  height: .5rem;
+  background: var(--marca);
+  border-radius: 999px;
+}
+
+/* Tablas legibles en celular */
+@media (max-width: 575.98px) {
+  .tabla-responsive-sm td, .tabla-responsive-sm th { white-space: nowrap; }
+}

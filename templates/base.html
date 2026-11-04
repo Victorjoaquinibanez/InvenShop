@@ -1,0 +1,107 @@
+{% load static %}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}InvenShop{% endblock %} · InvenShop</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="{% static 'css/invenshop.css' %}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-marca sticky-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{% url 'catalogo:lista' %}">
+      <i class="bi bi-box-seam"></i> InvenShop
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal"
+            aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir menú">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="menuPrincipal">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'lista' and request.resolver_match.app_name == 'catalogo' %}active{% endif %}"
+             href="{% url 'catalogo:lista' %}">Catálogo</a>
+        </li>
+        {% if user.is_authenticated and user.es_personal %}
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.app_name == 'panel' or 'gestion' in request.resolver_match.url_name %}active{% endif %}"
+               href="{% url 'panel:inicio' %}">Panel de gestión</a>
+          </li>
+        {% endif %}
+      </ul>
+
+      <ul class="navbar-nav align-items-lg-center gap-lg-2">
+        <li class="nav-item">
+          <a class="nav-link position-relative" href="{% url 'carrito:ver' %}" aria-label="Carrito, {{ carrito_cantidad }} unidades">
+            <i class="bi bi-cart3 fs-5"></i>
+            <span class="d-lg-none ms-1">Carrito</span>
+            {% if carrito_cantidad %}
+              <span class="badge rounded-pill bg-warning text-dark contador-carrito">{{ carrito_cantidad }}</span>
+            {% endif %}
+          </a>
+        </li>
+        {% if user.is_authenticated %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-person-circle"></i> {{ user.nombre }}
+              <span class="badge text-bg-light ms-1">{{ user.get_rol_display }}</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'usuarios:perfil' %}"><i class="bi bi-person"></i> Mi perfil</a></li>
+              <li><a class="dropdown-item" href="{% url 'pedidos:mis_pedidos' %}"><i class="bi bi-bag"></i> Mis pedidos</a></li>
+              {% if user.is_staff %}
+                <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-gear"></i> Admin de Django</a></li>
+              {% endif %}
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <form method="post" action="{% url 'usuarios:logout' %}">
+                  {% csrf_token %}
+                  <button type="submit" class="dropdown-item"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</button>
+                </form>
+              </li>
+            </ul>
+          </li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'usuarios:login' %}">Ingresar</a></li>
+          <li class="nav-item"><a class="btn btn-warning btn-sm fw-semibold" href="{% url 'usuarios:registro' %}">Crear cuenta</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="flex-grow-1 py-4">
+  <div class="{% block contenedor %}container{% endblock %}">
+    {% if messages %}
+      <div class="mensajes" aria-live="polite">
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block contenido %}{% endblock %}
+  </div>
+</main>
+
+<footer class="bg-dark text-white-50 py-3 mt-auto">
+  <div class="container d-flex flex-wrap justify-content-between gap-2 small">
+    <span>&copy; {% now "Y" %} InvenShop · Gestión e inventario para PyMEs</span>
+    <span>Programación IV · ITSE</span>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
