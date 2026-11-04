@@ -101,6 +101,10 @@ static/      CSS propio
 
 - **Credenciales:** la `SECRET_KEY` y la configuración salen del `.env`, que no se sube a git.
 - **Errores:** con `DEBUG=False` no se muestran detalles internos; se usan las plantillas 403, 404 y 500.
+  Para probarlo en la computadora local hay que poner `DEBUG=False` y `SERVIR_MEDIA=True` en el `.env`,
+  y levantar el servidor con `python manage.py runserver --insecure` (si no, faltan el CSS y las fotos).
+- **Producción:** con `SEGURO_HTTPS=True` las cookies viajan solo por HTTPS, se fuerza HTTPS y se activa HSTS,
+  y así se pasa `python manage.py check --deploy`.
 - **Formularios:** todos los que cambian datos usan POST con `{% csrf_token %}`.
 - **XSS:** las plantillas escapan el contenido automáticamente.
 - **Carrito:** en la sesión se guardan solo los ids y las cantidades. Los precios se leen siempre de la base, así que no se pueden manipular.

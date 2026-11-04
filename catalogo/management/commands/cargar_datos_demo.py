@@ -7,7 +7,9 @@ Se puede correr varias veces: no duplica lo que ya existe.
 """
 
 from decimal import Decimal
+from pathlib import Path
 
+from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -48,6 +50,28 @@ CATALOGO = {
     ]),
 }
 
+# Fotos de los productos de prueba (están en el repositorio; media/ no se sube a git)
+CARPETA_IMAGENES = Path(__file__).resolve().parents[2] / 'datos_demo' / 'imagenes'
+IMAGENES = {
+    'Aceite de girasol 1,5 L': 'aceite-girasol.webp',
+    'Agua mineral 2 L': 'agua-mineral.webp',
+    'Arroz largo fino 1 kg': 'arroz-largo-fino.jpg',
+    'Auriculares in-ear': 'auriculares-in-ear.jpg',
+    'Azúcar 1 kg': 'azucar-1kg.jpg',
+    'Birome azul x10': 'birome-azul-x10.jpg',
+    'Cargador USB-C 20 W': 'cargador-usb-c-20w.jpg',
+    'Cuaderno universitario 84 h': 'cuaderno-universitario-84h.jpg',
+    'Detergente 750 ml': 'detergente-750ml.jpg',
+    'Esponja doble faz x3': 'esponja-doble-faz-x3.jpg',
+    'Fideos tirabuzón 500 g': 'fideos-tirabuzon-500g.jpg',
+    'Gaseosa cola 2,25 L': 'gaseosa-cola-2-25l.jpg',
+    'Jugo de naranja 1 L': 'jugo-naranja-1l.jpg',
+    'Lavandina 2 L': 'lavandina-2l.jpg',
+    'Mouse inalámbrico': 'mouse-inalambrico.jpg',
+    'Resma A4 500 hojas': 'resma-a4-500-hojas.jpg',
+    'Yerba mate 1 kg': 'yerba-mate-1kg.jpg',
+}
+
 USUARIOS = [
     ('admin@invenshop.com', 'Ana', 'Administradora', Usuario.Rol.ADMIN),
     ('empleado@invenshop.com', 'Esteban', 'Empleado', Usuario.Rol.EMPLEADO),
@@ -82,6 +106,8 @@ class Command(BaseCommand):
                 )
                 productos_nuevos += creado
 
+        imagenes_cargadas = self._cargar_imagenes()
+
         usuarios = {}
         for email, nombre, apellido, rol in USUARIOS:
             usuario = Usuario.objects.filter(email=email).first()
@@ -96,11 +122,24 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f'Listo: {Categoria.objects.count()} categorías, {Producto.objects.count()} productos '
-            f'({productos_nuevos} nuevos), {Pedido.objects.count()} pedidos.'
+            f'({productos_nuevos} nuevos, {imagenes_cargadas} imágenes cargadas), {Pedido.objects.count()} pedidos.'
         ))
         self.stdout.write('Usuarios de prueba (contraseña: %s):' % PASSWORD_DEMO)
         for email, _, _, rol in USUARIOS:
             self.stdout.write(f'  {Usuario.Rol(rol).label:<14} {email}')
+
+    def _cargar_imagenes(self):
+        """Asigna la foto a los productos que todavía no tienen (no pisa una imagen ya cargada)."""
+        cargadas = 0
+        for nombre, archivo in IMAGENES.items():
+            producto = Producto.objects.filter(nombre=nombre).first()
+            ruta = CARPETA_IMAGENES / archivo
+            if producto is None or producto.imagen or not ruta.exists():
+                continue
+            with ruta.open('rb') as imagen:
+                producto.imagen.save(archivo, File(imagen), save=True)
+            cargadas += 1
+        return cargadas
 
     def _pedidos_de_ejemplo(self, cliente):
         from carrito.carrito import Carrito

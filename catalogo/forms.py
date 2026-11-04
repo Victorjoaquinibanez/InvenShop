@@ -29,6 +29,10 @@ class ProductoForm(BootstrapMixin, forms.ModelForm):
             'precio': forms.NumberInput(attrs={'min': '0.01', 'step': '0.01'}),
             'stock': forms.NumberInput(attrs={'min': '0'}),
         }
+        help_texts = {
+            'imagen': 'Ideal: 800 × 600 px (4:3), fondo blanco y el producto ocupando todo el alto. '
+                      'En el catálogo se muestra entera, sin recortes. Máximo 2 MB.',
+        }
 
     def clean_nombre(self):
         return ' '.join(self.cleaned_data['nombre'].split())

@@ -1,7 +1,7 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 
 admin.site.site_header = 'InvenShop · Administración'
 admin.site.site_title = 'InvenShop'
@@ -16,6 +16,8 @@ urlpatterns = [
     path('', include('catalogo.urls')),
 ]
 
-if settings.DEBUG:
+if settings.SERVIR_MEDIA:
     # En desarrollo Django sirve las imágenes subidas; en producción lo hace el servidor web
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += [
+        re_path(rf'^{settings.MEDIA_URL.lstrip("/")}(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+    ]

@@ -136,15 +136,19 @@ MESSAGE_TAGS = {
 }
 
 
-# Seguridad de cookies (en producción, con HTTPS, poner SEGURO_HTTPS=True en el .env)
+# Seguridad
 SESSION_COOKIE_HTTPONLY = True
-CSRF_COOKIE_SECURE = env_bool('SEGURO_HTTPS')
-SESSION_COOKIE_SECURE = env_bool('SEGURO_HTTPS')
 X_FRAME_OPTIONS = 'DENY'
 
+# En producción, con HTTPS, poner SEGURO_HTTPS=True en el .env: cookies solo por HTTPS,
+# redirección a HTTPS y HSTS (así pasa `python manage.py check --deploy`)
+if env_bool('SEGURO_HTTPS'):
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# Con DEBUG=False Django deja de servir las fotos subidas (media/). Para probar así en la
+# computadora local se pone SERVIR_MEDIA=True; en un servidor real lo hace el servidor web.
+SERVIR_MEDIA = DEBUG or env_bool('SERVIR_MEDIA')

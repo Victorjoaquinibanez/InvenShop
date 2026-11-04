@@ -1,0 +1,193 @@
+=====================================================================
+                       INVENSHOP - GUÍA RÁPIDA
+     Sistema de gestión e inventario con tienda online (Django)
+          Programación IV - ITSE - Trabajo Final 2026
+=====================================================================
+
+
+---------------------------------------------------------------------
+1. USUARIOS DE PRUEBA
+---------------------------------------------------------------------
+
+Los tres usuarios tienen la misma contraseña:  InvenShop2026!
+(con I y S mayúsculas y el signo ! al final)
+
+  ROL             EMAIL                        CONTRASEÑA
+  -------------   --------------------------   --------------
+  Administrador   admin@invenshop.com          InvenShop2026!
+  Empleado        empleado@invenshop.com       InvenShop2026!
+  Cliente         cliente@invenshop.com        InvenShop2026!
+
+Son cuentas de prueba creadas por el comando "cargar_datos_demo".
+Si algún día se publica en un servidor real, hay que cambiarlas.
+
+También se puede crear una cuenta nueva con "Crear cuenta":
+toda cuenta nueva es de tipo Cliente.
+
+
+---------------------------------------------------------------------
+2. CÓMO ABRIRLO
+---------------------------------------------------------------------
+
+1) Abrir una terminal en la carpeta InvenShop.
+2) Escribir:   .\venv\Scripts\python.exe manage.py runserver
+3) Entrar en el navegador a:   http://127.0.0.1:8000
+
+La terminal tiene que quedar abierta mientras se usa la página.
+Si se cierra, la página deja de funcionar ("No se puede acceder
+a este sitio web").
+
+Para cerrar el servidor: Ctrl + C en la terminal.
+
+
+---------------------------------------------------------------------
+3. QUÉ ES INVENSHOP
+---------------------------------------------------------------------
+
+Es una aplicación web para una PyME (un comercio chico o mediano)
+que hoy maneja sus ventas y su stock con planillas de Excel.
+InvenShop reúne todo en un solo lugar:
+
+  - Una TIENDA ONLINE donde los clientes ven los productos,
+    los agregan al carrito y hacen pedidos.
+
+  - Un PANEL DE GESTIÓN donde el personal del comercio carga
+    productos, controla el stock y atiende los pedidos.
+
+El stock se actualiza solo: cuando un cliente confirma un pedido
+se descuenta, y si el pedido se cancela se devuelve.
+
+
+---------------------------------------------------------------------
+4. QUÉ PUEDE HACER CADA USUARIO
+---------------------------------------------------------------------
+
+>> VISITANTE (sin iniciar sesión)
+   - Ver el catálogo de productos.
+   - Buscar por nombre o descripción, filtrar por categoría y
+     ordenar por precio o por nombre (se puede combinar todo).
+   - Ver el detalle de cada producto (foto, precio, stock).
+   - Armar el carrito.
+   - Para comprar tiene que iniciar sesión o crear una cuenta.
+     El carrito no se pierde al iniciar sesión.
+
+
+>> CLIENTE   (cliente@invenshop.com)
+   Todo lo del visitante, y además:
+   - Hacer pedidos (comprar).
+   - Ver "Mis pedidos": su historial con fecha, estado y total,
+     y el detalle de cada pedido.
+   - Editar su perfil (nombre, apellido, teléfono) y cambiar
+     su contraseña.
+
+   NO puede:
+   - Ver los pedidos de otros clientes.
+   - Entrar al panel de gestión.
+   - Cambiar el estado de un pedido.
+
+
+>> EMPLEADO   (empleado@invenshop.com)
+   Al iniciar sesión entra directo al Panel de gestión:
+   - INICIO: cuántos pedidos hay en cada estado, los pedidos
+     pendientes y los productos con poco stock.
+   - PRODUCTOS: crear, editar y eliminar productos; subir la
+     foto; cambiar el stock rápido desde el listado; mostrar u
+     ocultar un producto del catálogo.
+   - CATEGORÍAS: crear, editar y eliminar categorías.
+   - PEDIDOS: ver los pedidos de todos los clientes, buscarlos
+     y filtrarlos por estado o fecha, y cambiarles el estado.
+   - Entrar al Admin de Django (/admin) con estos mismos permisos.
+
+   NO puede:
+   - Administrar usuarios ni cambiar roles.
+   - Ver los reportes de ventas.
+   - Hacer pedidos (es personal del comercio, no cliente).
+
+
+>> ADMINISTRADOR   (admin@invenshop.com)
+   Acceso total. Todo lo del empleado, y además:
+   - USUARIOS: ver todas las cuentas, cambiar el rol de un
+     usuario (Cliente / Empleado / Administrador) y activar o
+     desactivar cuentas.
+   - REPORTES: lo facturado, la cantidad de pedidos vendidos,
+     el ticket promedio, las ventas por mes y por categoría,
+     los productos más vendidos y los mejores clientes.
+   - Admin de Django completo (también usuarios y permisos).
+
+   Por seguridad, un administrador no puede quitarse a sí mismo
+   el rol ni desactivar su propia cuenta.
+
+
+Resumen:
+
+  ACCIÓN                           VISITANTE CLIENTE EMPLEADO ADMIN
+  ------------------------------   --------- ------- -------- -----
+  Ver catálogo y carrito               SÍ       SÍ      SÍ      SÍ
+  Hacer pedidos                        no       SÍ      no      no
+  Ver sus propios pedidos              no       SÍ      SÍ      SÍ
+  Editar su perfil                     no       SÍ      SÍ      SÍ
+  Productos, categorías y stock        no       no      SÍ      SÍ
+  Ver todos los pedidos                no       no      SÍ      SÍ
+  Cambiar estado de pedidos            no       no      SÍ      SÍ
+  Administrar usuarios y roles         no       no      no      SÍ
+  Reportes de ventas                   no       no      no      SÍ
+
+Si alguien entra a una página que no le corresponde, ve el error
+"403 - Acceso denegado". Si no inició sesión, lo manda al login.
+
+
+---------------------------------------------------------------------
+5. CÓMO FUNCIONA UNA COMPRA
+---------------------------------------------------------------------
+
+1) El cliente agrega productos al carrito. No puede pedir más
+   unidades de las que hay en stock. Los productos "Agotado"
+   no se pueden agregar.
+2) En el carrito puede cambiar cantidades, quitar productos o
+   vaciarlo. El total se calcula solo.
+3) "Continuar con la compra": carga los datos de envío
+   (dirección con número, ciudad, código postal y teléfono).
+   Se validan: por ejemplo, el código postal tiene que ser de
+   4 dígitos (4200) o del formato nuevo (G4200ABC).
+4) Revisa todo y toca "Confirmar pedido".
+5) Recién ahí se registra el pedido, se descuenta el stock y
+   se vacía el carrito. Si mientras tanto otro cliente compró
+   el último producto, no se registra nada y se le avisa.
+
+
+---------------------------------------------------------------------
+6. ESTADOS DE UN PEDIDO
+---------------------------------------------------------------------
+
+   Pendiente  ->  Pagado  ->  Enviado
+       |            |
+       +------------+-->  Cancelado
+
+  - Todo pedido nuevo empieza como Pendiente.
+  - Solo el Empleado o el Administrador cambian el estado.
+  - Un pedido Pendiente o Pagado se puede cancelar: al cancelarlo
+    se devuelve automáticamente el stock de sus productos.
+  - Un pedido Enviado o Cancelado ya no se puede cambiar.
+
+
+---------------------------------------------------------------------
+7. FOTOS DE LOS PRODUCTOS
+---------------------------------------------------------------------
+
+Para que la foto quede bien en el cuadro del catálogo:
+  - Tamaño ideal: 800 x 600 píxeles.
+  - Fondo blanco, con el producto centrado ocupando todo el alto.
+  - Peso máximo: 2 MB.
+La foto siempre se muestra entera, nunca se recorta.
+
+
+---------------------------------------------------------------------
+8. DATOS DE PRUEBA QUE YA ESTÁN CARGADOS
+---------------------------------------------------------------------
+
+  - 5 categorías: Almacén, Bebidas, Electrónica, Librería, Limpieza.
+  - 17 productos con foto. Algunos están agotados (Azúcar 1 kg,
+    Mouse inalámbrico) y otros con poco stock, para mostrar
+    esos casos.
+  - 3 pedidos del cliente de prueba: uno Enviado, uno Pagado y
+    uno Pendiente.
