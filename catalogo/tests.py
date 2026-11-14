@@ -91,3 +91,20 @@ class GestionProductosTests(TestCase):
         Producto.objects.create(nombre='Vaso', precio=Decimal('10'), stock=1, categoria=self.categoria)
         self.client.post(reverse('catalogo:categoria_eliminar', args=[self.categoria.pk]))
         self.assertTrue(Categoria.objects.filter(pk=self.categoria.pk).exists())
+
+    def test_siguiente_solo_acepta_rutas_internas(self):
+        producto = Producto.objects.create(nombre='Jarra', precio=Decimal('10'), stock=1, categoria=self.categoria)
+        url = reverse('catalogo:producto_stock', args=[producto.pk])
+        interna = reverse('catalogo:gestion_productos') + '?pagina=2'
+        respuesta = self.client.post(url, {'stock': '3', 'siguiente': interna})
+        self.assertRedirects(respuesta, interna, fetch_redirect_response=False)
+        # Open redirect (Clase 7): otros sitios, incluido el truco '/\sitio', vuelven al listado
+        for externa in ['https://evil.com/', '//evil.com/', r'/\evil.com']:
+            respuesta = self.client.post(url, {'stock': '3', 'siguiente': externa})
+            self.assertRedirects(respuesta, reverse('catalogo:gestion_productos'), fetch_redirect_response=False)
+
+    def test_anonimo_va_al_login(self):
+        self.client.logout()
+        respuesta = self.client.get(reverse('catalogo:gestion_productos'))
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertIn(reverse('usuarios:login'), respuesta['Location'])

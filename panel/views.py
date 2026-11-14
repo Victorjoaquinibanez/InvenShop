@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Count, DecimalField, F, Sum, Value
 from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
@@ -16,7 +16,7 @@ CERO = Value(0, output_field=DecimalField(max_digits=12, decimal_places=2))
 ESTADOS_VENDIDOS = [Pedido.Estado.PAGADO, Pedido.Estado.ENVIADO]
 
 
-class InicioPanelView(PermissionRequiredMixin, TemplateView):
+class InicioPanelView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     """Inicio del panel: lo que el personal tiene que atender hoy."""
 
     permission_required = 'catalogo.view_producto'  # Empleado y Administrador
@@ -38,7 +38,7 @@ class InicioPanelView(PermissionRequiredMixin, TemplateView):
         return contexto
 
 
-class ReportesView(PermissionRequiredMixin, TemplateView):
+class ReportesView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     """Reportes de ventas (solo Administrador)."""
 
     permission_required = 'pedidos.ver_reportes'

@@ -76,7 +76,7 @@ class CambiarPasswordView(LoginRequiredMixin, SuccessMessageMixin, PasswordChang
 
 # ----- Gestión de usuarios (solo Administrador) -----
 
-class UsuarioListView(PermissionRequiredMixin, ListView):
+class UsuarioListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     permission_required = 'usuarios.view_usuario'
     template_name = 'usuarios/gestion_lista.html'
     context_object_name = 'usuarios'
@@ -102,7 +102,7 @@ class UsuarioListView(PermissionRequiredMixin, ListView):
         return contexto
 
 
-class UsuarioRolUpdateView(PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
+class UsuarioRolUpdateView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
     permission_required = 'usuarios.change_usuario'
     model = Usuario
     form_class = UsuarioRolForm

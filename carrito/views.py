@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import TemplateView
 
@@ -12,7 +13,9 @@ from .forms import ActualizarCantidadForm, AgregarAlCarritoForm
 def volver(request, por_defecto='carrito:ver'):
     """Redirige a ?siguiente= si es una ruta interna (evita redirecciones a otros sitios)."""
     siguiente = request.POST.get('siguiente', '')
-    if siguiente.startswith('/') and not siguiente.startswith('//'):
+    if url_has_allowed_host_and_scheme(
+        siguiente, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
         return redirect(siguiente)
     return redirect(por_defecto)
 

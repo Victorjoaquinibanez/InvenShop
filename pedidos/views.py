@@ -136,7 +136,7 @@ class PedidoDetailView(LoginRequiredMixin, DetailView):
 
 # ----- Gestión (Empleado y Administrador) -----
 
-class PedidoGestionListView(PermissionRequiredMixin, ListView):
+class PedidoGestionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     permission_required = 'pedidos.ver_todos_los_pedidos'
     template_name = 'pedidos/gestion_lista.html'
     context_object_name = 'pedidos'
@@ -174,7 +174,7 @@ class PedidoGestionListView(PermissionRequiredMixin, ListView):
         return contexto
 
 
-class CambiarEstadoView(PermissionRequiredMixin, View):
+class CambiarEstadoView(LoginRequiredMixin, PermissionRequiredMixin, View):
     permission_required = 'pedidos.cambiar_estado_pedido'
     http_method_names = ['post']
 

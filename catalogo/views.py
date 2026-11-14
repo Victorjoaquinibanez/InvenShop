@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.messages.views import SuccessMessageMixin
 from django.db.models import Count, ProtectedError, Q
 from django.shortcuts import get_object_or_404, redirect
@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from carrito.forms import AgregarAlCarritoForm
+from carrito.views import volver
 
 from .forms import AjusteStockForm, CategoriaForm, FiltroCatalogoForm, ProductoForm
 from .models import Categoria, Producto
@@ -73,7 +74,7 @@ class ProductoDetailView(DetailView):
 
 # ----- Gestión de productos (Empleado y Administrador) -----
 
-class ProductoGestionListView(PermissionRequiredMixin, ListView):
+class ProductoGestionListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     permission_required = 'catalogo.view_producto'
     template_name = 'catalogo/gestion/productos_lista.html'
     context_object_name = 'productos'
@@ -101,7 +102,7 @@ class ProductoGestionListView(PermissionRequiredMixin, ListView):
         return contexto
 
 
-class ProductoCreateView(PermissionRequiredMixin, SuccessMessageMixin, CreateView):
+class ProductoCreateView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, CreateView):
     permission_required = 'catalogo.add_producto'
     model = Producto
     form_class = ProductoForm
@@ -110,7 +111,7 @@ class ProductoCreateView(PermissionRequiredMixin, SuccessMessageMixin, CreateVie
     success_message = 'Se creó el producto "%(nombre)s".'
 
 
-class ProductoUpdateView(PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
+class ProductoUpdateView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
     permission_required = 'catalogo.change_producto'
     model = Producto
     form_class = ProductoForm
@@ -119,7 +120,7 @@ class ProductoUpdateView(PermissionRequiredMixin, SuccessMessageMixin, UpdateVie
     success_message = 'Se guardaron los cambios de "%(nombre)s".'
 
 
-class ProductoDeleteView(PermissionRequiredMixin, DeleteView):
+class ProductoDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     permission_required = 'catalogo.delete_producto'
     model = Producto
     template_name = 'catalogo/gestion/confirmar_borrado.html'
@@ -156,10 +157,7 @@ def ajustar_stock(request, pk):
         messages.success(request, f'Stock de "{producto.nombre}": {producto.stock}.')
     else:
         messages.error(request, 'El stock debe ser un número entero mayor o igual a 0.')
-    siguiente = request.POST.get('siguiente', '')
-    if siguiente.startswith('/') and not siguiente.startswith('//'):
-        return redirect(siguiente)
-    return redirect('catalogo:gestion_productos')
+    return volver(request, 'catalogo:gestion_productos')
 
 
 @login_required
@@ -171,15 +169,12 @@ def alternar_activo(request, pk):
     producto.save(update_fields=['activo', 'actualizado'])
     estado = 'visible en el catálogo' if producto.activo else 'oculto del catálogo'
     messages.success(request, f'"{producto.nombre}" quedó {estado}.')
-    siguiente = request.POST.get('siguiente', '')
-    if siguiente.startswith('/') and not siguiente.startswith('//'):
-        return redirect(siguiente)
-    return redirect('catalogo:gestion_productos')
+    return volver(request, 'catalogo:gestion_productos')
 
 
 # ----- Gestión de categorías -----
 
-class CategoriaListView(PermissionRequiredMixin, ListView):
+class CategoriaListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     permission_required = 'catalogo.view_categoria'
     template_name = 'catalogo/gestion/categorias_lista.html'
     context_object_name = 'categorias'
@@ -191,7 +186,7 @@ class CategoriaListView(PermissionRequiredMixin, ListView):
         )
 
 
-class CategoriaCreateView(PermissionRequiredMixin, SuccessMessageMixin, CreateView):
+class CategoriaCreateView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, CreateView):
     permission_required = 'catalogo.add_categoria'
     model = Categoria
     form_class = CategoriaForm
@@ -200,7 +195,7 @@ class CategoriaCreateView(PermissionRequiredMixin, SuccessMessageMixin, CreateVi
     success_message = 'Se creó la categoría "%(nombre)s".'
 
 
-class CategoriaUpdateView(PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
+class CategoriaUpdateView(LoginRequiredMixin, PermissionRequiredMixin, SuccessMessageMixin, UpdateView):
     permission_required = 'catalogo.change_categoria'
     model = Categoria
     form_class = CategoriaForm
@@ -209,7 +204,7 @@ class CategoriaUpdateView(PermissionRequiredMixin, SuccessMessageMixin, UpdateVi
     success_message = 'Se guardaron los cambios de "%(nombre)s".'
 
 
-class CategoriaDeleteView(PermissionRequiredMixin, DeleteView):
+class CategoriaDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     permission_required = 'catalogo.delete_categoria'
     model = Categoria
     template_name = 'catalogo/gestion/confirmar_borrado.html'
