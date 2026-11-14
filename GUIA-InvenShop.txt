@@ -29,6 +29,10 @@ toda cuenta nueva es de tipo Cliente.
 2. CÓMO ABRIRLO
 ---------------------------------------------------------------------
 
+(Esto es para una computadora donde InvenShop YA está instalado.
+Si lo vas a bajar de GitHub por primera vez, seguí antes el
+archivo INSTALACION-InvenShop.txt.)
+
 1) Abrir una terminal en la carpeta InvenShop.
 2) Escribir:   .\venv\Scripts\python.exe manage.py runserver
 3) Entrar en el navegador a:   http://127.0.0.1:8000
@@ -144,7 +148,8 @@ Si alguien entra a una página que no le corresponde, ve el error
    unidades de las que hay en stock. Los productos "Agotado"
    no se pueden agregar.
 2) En el carrito puede cambiar cantidades, quitar productos o
-   vaciarlo. El total se calcula solo.
+   vaciarlo. El total se calcula solo. Antes de vaciar el
+   carrito aparece una ventana que pide confirmarlo.
 3) "Continuar con la compra": carga los datos de envío
    (dirección con número, ciudad, código postal y teléfono).
    Se validan: por ejemplo, el código postal tiene que ser de
@@ -167,6 +172,7 @@ Si alguien entra a una página que no le corresponde, ve el error
   - Solo el Empleado o el Administrador cambian el estado.
   - Un pedido Pendiente o Pagado se puede cancelar: al cancelarlo
     se devuelve automáticamente el stock de sus productos.
+    Antes de cancelarlo aparece una ventana que pide confirmarlo.
   - Un pedido Enviado o Cancelado ya no se puede cambiar.
 
 

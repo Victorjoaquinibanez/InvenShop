@@ -37,7 +37,7 @@ Cada rol es un **grupo de Django** con sus permisos (ver [usuarios/roles.py](usu
 Hace falta **Python 3.12 o superior**.
 
 ```powershell
-git clone <url-del-repositorio> InvenShop
+git clone https://github.com/Victorjoaquinibanez/InvenShop.git
 cd InvenShop
 
 python -m venv venv

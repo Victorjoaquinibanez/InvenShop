@@ -1,0 +1,238 @@
+=====================================================================
+                 INVENSHOP - CÓMO INSTALARLO DESDE GITHUB
+       Pasos para bajar el proyecto y hacerlo andar en tu compu
+          Programación IV - ITSE - Trabajo Final 2026
+=====================================================================
+
+Estos pasos son para Windows. Se hacen UNA SOLA VEZ por computadora.
+Después, para usarlo, alcanza con el paso 9 ("Levantar el servidor").
+
+Repositorio:  https://github.com/Victorjoaquinibanez/InvenShop
+
+
+---------------------------------------------------------------------
+1. QUÉ HACE FALTA TENER INSTALADO
+---------------------------------------------------------------------
+
+  - PYTHON 3.12 o más nuevo (el proyecto se probó con 3.13).
+    Bajarlo de https://www.python.org/downloads/
+    IMPORTANTE: en la primera pantalla del instalador marcar la
+    casilla "Add python.exe to PATH".
+
+  - GIT (para descargar el proyecto).
+    Bajarlo de https://git-scm.com/download/win y dejar todas las
+    opciones como vienen.
+    (Si no querés instalar Git, mirá la opción B del paso 3.)
+
+Para comprobar que quedaron instalados, abrir una terminal
+(PowerShell o "Símbolo del sistema") y escribir:
+
+    python --version
+    git --version
+
+Cada uno tiene que mostrar un número de versión. Si dice "no se
+reconoce como comando", cerrar la terminal, abrirla de nuevo y
+volver a probar; si sigue igual, reinstalar Python marcando
+"Add python.exe to PATH".
+
+
+---------------------------------------------------------------------
+2. ABRIR UNA TERMINAL EN LA CARPETA DONDE LO VAS A GUARDAR
+---------------------------------------------------------------------
+
+Por ejemplo, en el Escritorio:
+
+    cd $HOME\Desktop
+
+(En "Símbolo del sistema" es:  cd %USERPROFILE%\Desktop )
+
+
+---------------------------------------------------------------------
+3. DESCARGAR EL PROYECTO
+---------------------------------------------------------------------
+
+OPCIÓN A - con Git (recomendada):
+
+    git clone https://github.com/Victorjoaquinibanez/InvenShop.git
+
+OPCIÓN B - sin Git:
+    Entrar al repositorio en el navegador, botón verde "Code" ->
+    "Download ZIP". Descomprimir el ZIP en el Escritorio y renombrar
+    la carpeta "InvenShop-main" a "InvenShop".
+
+Después, entrar a la carpeta:
+
+    cd InvenShop
+
+TODOS los comandos que siguen se escriben desde esta carpeta.
+
+
+---------------------------------------------------------------------
+4. CREAR EL ENTORNO VIRTUAL (venv)
+---------------------------------------------------------------------
+
+El entorno virtual es una carpeta "venv" donde se instala Django
+solo para este proyecto. No viene en GitHub: cada uno lo crea.
+
+    python -m venv venv
+
+Tarda unos segundos y no muestra nada si salió bien.
+
+
+---------------------------------------------------------------------
+5. INSTALAR DJANGO Y LAS DEMÁS LIBRERÍAS
+---------------------------------------------------------------------
+
+    .\venv\Scripts\python.exe -m pip install -r requirements.txt
+
+Necesita internet. Instala las versiones exactas que usa el
+proyecto (Django, Pillow para las fotos, etc.).
+Si al final aparece un aviso "A new release of pip is available",
+se puede ignorar.
+
+
+---------------------------------------------------------------------
+6. CREAR EL ARCHIVO .env (configuración)
+---------------------------------------------------------------------
+
+El proyecto lee su configuración secreta de un archivo llamado .env
+que NO se sube a GitHub. Se arma a partir de .env.example:
+
+    copy .env.example .env
+
+Ahora hay que generar una clave secreta propia:
+
+    .\venv\Scripts\python.exe -c "from django.core.management.utils import get_random_secret_key as g; print(g())"
+
+Eso muestra una clave larga de letras y símbolos. Copiarla.
+Abrir el archivo .env con el Bloc de notas o VS Code:
+
+    notepad .env
+
+y reemplazar la línea
+
+    SECRET_KEY=cambiar-por-una-clave-larga-y-secreta
+
+por
+
+    SECRET_KEY=<la clave que copiaste>
+
+Guardar y cerrar. El resto de las líneas se dejan como están.
+
+Si se saltea este paso, Django muestra el error:
+"Falta SECRET_KEY en el archivo .env".
+
+
+---------------------------------------------------------------------
+7. CREAR LA BASE DE DATOS
+---------------------------------------------------------------------
+
+La base de datos tampoco viene en GitHub. Este comando la crea
+(archivo db.sqlite3) con todas sus tablas y los roles:
+
+    .\venv\Scripts\python.exe manage.py migrate
+
+Muestra una lista de líneas que terminan en "OK".
+
+
+---------------------------------------------------------------------
+8. CARGAR LOS DATOS DE PRUEBA
+---------------------------------------------------------------------
+
+Carga categorías, productos con foto, los 3 usuarios de prueba y
+algunos pedidos, para que quede igual que en la compu original:
+
+    .\venv\Scripts\python.exe manage.py cargar_datos_demo
+
+Al final tiene que decir algo como:
+
+    Listo: 5 categorías, 17 productos (17 nuevos, 17 imágenes cargadas), 3 pedidos.
+
+Se puede correr más de una vez: no duplica nada.
+
+
+---------------------------------------------------------------------
+9. LEVANTAR EL SERVIDOR
+---------------------------------------------------------------------
+
+    .\venv\Scripts\python.exe manage.py runserver
+
+Abrir en el navegador:   http://127.0.0.1:8000
+
+La terminal tiene que quedar abierta mientras se usa la página.
+Para apagar el servidor: Ctrl + C en la terminal.
+
+USUARIOS DE PRUEBA (todos con la contraseña  InvenShop2026! ):
+
+  Administrador   admin@invenshop.com
+  Empleado        empleado@invenshop.com
+  Cliente         cliente@invenshop.com
+
+Qué puede hacer cada uno está explicado en GUIA-InvenShop.txt.
+
+
+---------------------------------------------------------------------
+10. LAS PRÓXIMAS VECES
+---------------------------------------------------------------------
+
+Ya no hay que repetir nada. Solo:
+
+    cd $HOME\Desktop\InvenShop
+    .\venv\Scripts\python.exe manage.py runserver
+
+Si el proyecto se actualizó en GitHub y querés traer los cambios
+(solo si lo bajaste con Git, opción A):
+
+    git pull
+    .\venv\Scripts\python.exe -m pip install -r requirements.txt
+    .\venv\Scripts\python.exe manage.py migrate
+
+(Los usuarios, productos y pedidos que hayas cargado se mantienen.)
+
+
+---------------------------------------------------------------------
+11. OPCIONAL - CORRER LOS TESTS
+---------------------------------------------------------------------
+
+    .\venv\Scripts\python.exe manage.py test
+
+Tiene que terminar diciendo "OK" (son 38 tests).
+
+
+---------------------------------------------------------------------
+12. PROBLEMAS COMUNES
+---------------------------------------------------------------------
+
+* "python no se reconoce como un comando..."
+  Python no está en el PATH. Reinstalarlo marcando
+  "Add python.exe to PATH" y abrir una terminal nueva.
+  (También se puede probar con  py  en lugar de  python .)
+
+* "Falta SECRET_KEY en el archivo .env"
+  No se hizo el paso 6, o el archivo quedó con otro nombre.
+  Tiene que llamarse exactamente  .env  (sin .txt al final).
+  En el Bloc de notas, al guardar, elegir "Todos los archivos".
+
+* "No module named django"
+  No se hizo el paso 5, o se usó  python  en vez de
+  .\venv\Scripts\python.exe
+
+* "no such table" o una página con error de base de datos
+  Falta el paso 7 (migrate).
+
+* El catálogo aparece vacío o no se puede iniciar sesión
+  Falta el paso 8 (cargar_datos_demo).
+
+* "Error: That port is already in use"
+  Ya hay otro servidor abierto. Cerrar la otra terminal, o usar
+  otro puerto:  .\venv\Scripts\python.exe manage.py runserver 8001
+  y entrar a  http://127.0.0.1:8001
+
+* "No se puede acceder a este sitio web"
+  El servidor no está corriendo: hacer el paso 9 y dejar la
+  terminal abierta.
+
+* Si se quiere activar el venv con  .\venv\Scripts\activate  y
+  PowerShell dice "la ejecución de scripts está deshabilitada":
+  no hace falta activarlo. Todos los comandos de esta guía usan
+  .\venv\Scripts\python.exe directamente, así que funcionan igual.
