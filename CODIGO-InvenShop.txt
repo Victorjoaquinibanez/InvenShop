@@ -1,0 +1,528 @@
+=====================================================================
+                 INVENSHOP - CÓMO ESTÁ HECHO EL CÓDIGO
+     Qué hace cada función, en qué archivo y líneas está, y con
+            qué clase de Programación IV se relaciona
+          Programación IV - ITSE - Trabajo Final 2026
+=====================================================================
+
+Este archivo es para entender el código o explicarlo en la defensa.
+Para usar el programa ver GUIA-InvenShop.txt; para instalarlo,
+INSTALACION-InvenShop.txt.
+
+Las referencias se escriben así:   archivo.py  (líneas X-Y)
+Las líneas corresponden a la versión del repositorio de esta fecha;
+si se modifica el código pueden correrse un poco.
+
+
+---------------------------------------------------------------------
+1. ARQUITECTURA GENERAL (Clases 1 y 6)
+---------------------------------------------------------------------
+
+InvenShop es un proyecto Django con el patrón MVT
+(Modelo - Vista - Template), que es la versión de Django del MVC
+de la Clase 1: el "controlador" lo pone el propio framework.
+
+  - MODELO   (models.py)     -> los datos y sus reglas.
+  - VISTA    (views.py)      -> recibe la petición y decide qué hacer.
+  - TEMPLATE (templates/)    -> el HTML que ve el usuario.
+
+Además hay una CAPA DE SERVICIOS (pedidos/servicios.py) con la
+lógica de negocio más delicada (registrar un pedido), separada de
+la vista, como pide la arquitectura en capas de la Clase 1.
+
+El proyecto se divide en apps, cada una con una tarea concreta
+(Clase 6: "un proyecto consta de una o varias aplicaciones"):
+
+  config/     Configuración (settings.py) y URLs principales.
+  usuarios/   Usuario propio con login por email, roles, registro,
+              perfil y gestión de usuarios.
+  catalogo/   Categorías y productos: catálogo público y gestión.
+  carrito/    Carrito de compras guardado en la sesión (sin tablas).
+  pedidos/    Pedidos, detalle de pedido, checkout y estados.
+  panel/      Inicio del panel de gestión y reportes de ventas.
+  templates/  Plantilla base, piezas reutilizables y páginas de error.
+  static/     CSS propio y el script del modal de confirmación.
+
+Recorrido de una petición (Clase 6, "funcionamiento de las
+peticiones HTTP"):
+
+  1) El navegador pide una URL, por ejemplo /carrito/.
+  2) config/urls.py (líneas 10-17) la deriva a la app que
+     corresponde, y el urls.py de la app elige la vista.
+  3) La vista usa los modelos (ORM) para leer o guardar datos.
+  4) La vista arma el contexto y renderiza una plantilla.
+  5) Django devuelve la respuesta HTTP con el HTML.
+
+
+---------------------------------------------------------------------
+2. CONFIGURACIÓN Y SEGURIDAD  (config/settings.py)
+---------------------------------------------------------------------
+
+* La clave secreta y la configuración se leen del archivo .env
+  (líneas 12-34). Si falta SECRET_KEY el proyecto no arranca y
+  avisa (líneas 27-29). Así las credenciales no se suben a GitHub.
+
+* Usuario propio:  AUTH_USER_MODEL = 'usuarios.Usuario'  (línea 93).
+
+* Adónde ir para iniciar sesión y adónde volver después
+  (líneas 95-96): LOGIN_URL y LOGIN_REDIRECT_URL.
+
+* Idioma y zona horaria de Argentina (líneas 107-110):
+  LANGUAGE_CODE = 'es-ar', TIME_ZONE = 'America/Argentina/Buenos_Aires'.
+
+* Context processor del carrito (línea 75): agrega la cantidad de
+  productos del carrito a todas las páginas, para el ícono del menú.
+  Código en carrito/context_processors.py (líneas 4-9).
+
+* Con SEGURO_HTTPS=True (líneas 143-150) se activan cookies seguras,
+  HTTPS obligatorio y HSTS, para un servidor real.
+
+Relación con las clases: Clase 6 (settings.py, apps instaladas,
+middleware) y Clase 1 (consideraciones de seguridad del backend).
+
+
+---------------------------------------------------------------------
+3. USUARIOS Y LOGIN CON EMAIL  (app usuarios)
+---------------------------------------------------------------------
+
+QUÉ HACE: cada persona entra con su email y contraseña, y tiene un
+rol: Administrador, Empleado o Cliente.
+
+DÓNDE ESTÁ:
+  usuarios/models.py
+    - UsuarioManager (líneas 6-31): crea usuarios y superusuarios
+      usando el email en vez de un nombre de usuario. El email se
+      guarda en minúsculas y el login no distingue mayúsculas
+      (líneas 29-31).
+    - Usuario (líneas 34-84): el modelo. Los roles están definidos
+      en la clase Rol (líneas 35-38). USERNAME_FIELD = 'email'
+      (línea 55) hace que el login sea por email.
+    - save() (líneas 67-71): si el rol es Admin o Empleado le da
+      acceso al admin de Django (is_staff) automáticamente.
+    - Propiedades es_admin y es_personal (líneas 77-84): las usan
+      las vistas y plantillas para saber qué mostrar.
+
+  usuarios/views.py
+    - RegistroView (líneas 16-29): crear cuenta. Todo registro
+      nuevo es Cliente (lo fuerza usuarios/forms.py, línea 81).
+    - IniciarSesionView y CerrarSesionView (líneas 32-47): usan las
+      vistas de login/logout que ya trae Django.
+    - inicio_segun_rol (líneas 50-55): después del login manda al
+      personal al panel y a los clientes al catálogo.
+    - PerfilView (líneas 58-67): cada uno edita SOLO su perfil, por
+      eso no hay un número de usuario en la URL.
+    - CambiarPasswordView (líneas 70-74).
+
+CLASES: Clase 12 (autenticación y sesiones), Clase 9 (modelos).
+
+
+---------------------------------------------------------------------
+4. ROLES Y PERMISOS  (app usuarios)
+---------------------------------------------------------------------
+
+QUÉ HACE: cada rol puede hacer solo lo que le corresponde. Si
+alguien entra a una página que no le toca ve "403 - Acceso
+denegado"; si no inició sesión, lo manda al login.
+
+CÓMO FUNCIONA: cada rol es un GRUPO de Django con sus permisos.
+
+  usuarios/roles.py
+    - PERMISOS_POR_ROL (líneas 14-28): la lista de permisos de cada
+      rol. El Administrador tiene todos; el Empleado, los de
+      productos, categorías y pedidos; el Cliente, solo hacer
+      pedidos.
+    - sincronizar_grupos() (líneas 35-46): crea los grupos con sus
+      permisos.
+    - asignar_grupo_del_rol() (líneas 49-54): pone al usuario en el
+      grupo de su rol.
+
+  usuarios/signals.py
+    - grupo_segun_rol (líneas 8-12): cada vez que se guarda un
+      usuario, se lo pone en el grupo de su rol (señal post_save).
+    - crear_grupos_de_roles (líneas 15-18): los grupos se crean
+      solos al correr "migrate" (señal post_migrate).
+    - Se conectan en usuarios/apps.py (líneas 9-12).
+
+  Permisos propios del proyecto en pedidos/models.py (líneas 48-52):
+    cambiar_estado_pedido, ver_todos_los_pedidos y ver_reportes.
+
+CÓMO SE PROTEGEN LAS VISTAS:
+  - Vistas basadas en clases: LoginRequiredMixin seguido de
+    PermissionRequiredMixin y el atributo permission_required.
+    Ejemplo: catalogo/views.py (líneas 77-78).
+  - Vistas de función: decoradores @login_required y
+    @permission_required. Ejemplo: catalogo/views.py (líneas 147-149).
+  - Un administrador no puede quitarse a sí mismo el rol ni
+    desactivarse: usuarios/forms.py (líneas 126-132).
+
+CLASES: Clase 12 (autenticación, LoginRequiredMixin,
+PermissionRequiredMixin), Clase 1 (gestión de permisos y control
+de acceso).
+
+
+---------------------------------------------------------------------
+5. CATÁLOGO DE PRODUCTOS  (app catalogo)
+---------------------------------------------------------------------
+
+QUÉ HACE: muestra los productos de a 12 por página, con búsqueda,
+filtro por categoría y orden, que se pueden combinar.
+
+DÓNDE ESTÁ:
+  catalogo/models.py
+    - Categoria (líneas 20-40) y Producto (líneas 52-94).
+    - La categoría de un producto es una ForeignKey con
+      on_delete=PROTECT (líneas 59-60): no se puede borrar una
+      categoría que tiene productos.
+    - Reglas en la base de datos: el precio tiene que ser mayor a 0
+      (CheckConstraint, líneas 77-79) y hay índices para que las
+      búsquedas sean rápidas (líneas 73-76).
+    - slug_unico() (líneas 9-17): arma la dirección del producto a
+      partir del nombre ("agua-mineral-2-l"), sin repetirse.
+    - ProductoQuerySet (líneas 43-49): consultas reutilizables:
+      activos() y con_categoria(), que usa select_related para no
+      hacer una consulta por cada producto (problema "N+1").
+    - agotado (líneas 92-94): True si el stock es 0.
+
+  catalogo/views.py
+    - filtrar_productos() (líneas 18-27): búsqueda por nombre o
+      descripción con Q(...) | Q(...), filtro por categoría y orden.
+      La comparten el catálogo y el panel (no se repite código).
+    - ProductoListView (líneas 39-55): el catálogo, con
+      paginate_by = 12 (línea 42). Al costado muestra las categorías
+      con cuántos productos tiene cada una (annotate + Count,
+      líneas 51-53).
+    - ProductoDetailView (líneas 58-72): la página de un producto y
+      hasta 4 productos relacionados de la misma categoría.
+
+  catalogo/forms.py
+    - FiltroCatalogoForm (línea 8): valida los filtros que llegan
+      por la URL (?q=...&categoria=...&orden=...).
+
+CLASES: Clase 9 (ORM: filter, Q, annotate, select_related),
+Clase 7 (ListView y DetailView, rutas con parámetros).
+
+
+---------------------------------------------------------------------
+6. GESTIÓN DE PRODUCTOS, CATEGORÍAS Y STOCK  (app catalogo)
+---------------------------------------------------------------------
+
+QUÉ HACE: el Empleado y el Administrador crean, editan y borran
+productos y categorías, cambian el stock rápido y muestran u
+ocultan productos.
+
+DÓNDE ESTÁ:  catalogo/views.py
+  - ProductoGestionListView (líneas 77-102): listado del panel con
+    filtros extra (activos, inactivos, sin stock, stock bajo).
+  - ProductoCreateView y ProductoUpdateView (líneas 105-120):
+    CreateView y UpdateView genéricas; el mensaje de "Se creó..."
+    lo pone SuccessMessageMixin.
+  - ProductoDeleteView (líneas 123-144): si el producto ya está en
+    algún pedido no se borra (Django lanza ProtectedError, líneas
+    136-142) y se sugiere desactivarlo, para no perder el historial.
+  - ajustar_stock (líneas 147-160): cambia el stock desde el listado.
+  - alternar_activo (líneas 163-172): muestra u oculta un producto.
+    Las dos aceptan solo POST (@require_POST) y vuelven a la página
+    donde estaba el usuario con volver() (ver punto 12).
+  - Categorías: líneas 177-225, con la misma idea.
+
+VALIDACIONES:  catalogo/forms.py
+  - clean_nombre (líneas 37-38): saca espacios de más del nombre.
+  - clean (líneas 40-47): no deja repetir un nombre de producto
+    dentro de la misma categoría.
+  - clean_imagen (líneas 49-53): la foto no puede pesar más de 2 MB.
+
+CLASES: Clase 7 (vistas genéricas CreateView, UpdateView,
+DeleteView y vistas de función), Clase 11 (formularios y
+validación con clean_<campo> y clean).
+
+
+---------------------------------------------------------------------
+7. CARRITO DE COMPRAS  (app carrito)
+---------------------------------------------------------------------
+
+QUÉ HACE: el visitante agrega productos, cambia cantidades, quita
+productos o vacía el carrito, sin necesidad de iniciar sesión.
+Nunca puede pedir más unidades que el stock disponible.
+
+CÓMO FUNCIONA: el carrito NO es una tabla de la base de datos; se
+guarda en la SESIÓN del usuario. En la sesión solo se guarda
+{número de producto: cantidad}. El precio y el stock se leen
+siempre de la base, así nadie puede cambiar un precio desde el
+navegador.
+
+DÓNDE ESTÁ:  carrito/carrito.py
+  - StockInsuficiente (líneas 17-25): el error que se muestra
+    cuando no alcanza el stock ("Solo hay 3 unidades de...").
+  - ItemCarrito (líneas 28-39): un renglón del carrito, con su
+    subtotal (precio x cantidad).
+  - Carrito.__init__ (líneas 43-49): lee el carrito de
+    request.session.
+  - agregar() (líneas 53-64): suma unidades controlando el stock.
+  - quitar() y vaciar() (líneas 66-72).
+  - _guardar() (líneas 74-77): escribe en la sesión y la marca como
+    modificada (session.modified = True).
+  - items() (líneas 81-96): trae todos los productos en UNA sola
+    consulta (in_bulk) y descarta los que se borraron o se
+    desactivaron mientras tanto.
+  - total (líneas 108-110) y problemas_de_stock (líneas 116-118).
+
+  carrito/views.py
+  - CarritoView (líneas 23-31): muestra el carrito.
+  - AgregarView, ActualizarView, QuitarView y VaciarView
+    (líneas 34-85): cada una acepta solo POST
+    (http_method_names = ['post']), porque cambian datos.
+
+El carrito no se pierde al iniciar sesión porque Django conserva
+los datos de la sesión al loguear al usuario.
+
+CLASES: Clase 12 (sistema de sesiones: request.session), Clase 2
+(GET para leer, POST para modificar).
+
+
+---------------------------------------------------------------------
+8. COMPRA (CHECKOUT) EN DOS PASOS  (app pedidos)
+---------------------------------------------------------------------
+
+QUÉ HACE: 1) el cliente carga los datos de envío; 2) revisa todo y
+confirma. Recién al confirmar se registra el pedido y se descuenta
+el stock.
+
+DÓNDE ESTÁ:  pedidos/views.py
+  - CheckoutMixin (líneas 26-49): controles comunes a los dos pasos:
+    tener sesión iniciada, ser Cliente (permiso add_pedido), que el
+    carrito no esté vacío y que alcance el stock.
+  - CheckoutView (líneas 52-66), paso 1: formulario de envío. Los
+    datos válidos se guardan en la sesión (línea 65).
+  - ConfirmarPedidoView (líneas 69-102), paso 2: al confirmar (POST,
+    líneas 89-102) llama al servicio que crea el pedido.
+
+VALIDACIÓN DE LOS DATOS DE ENVÍO:  pedidos/forms.py
+  - clean_direccion (líneas 26-32): exige la altura de la calle.
+  - clean_ciudad (líneas 34-38): solo letras, espacios y guiones.
+  - clean_codigo_postal (líneas 40-44): 4 dígitos (4200) o el
+    formato nuevo (G4200ABC), con una expresión regular (línea 10).
+  - clean_telefono_contacto (líneas 46-50).
+
+CLASES: Clase 11 (formularios), Clase 12 (sesiones),
+Clase 7 (FormView y TemplateView).
+
+
+---------------------------------------------------------------------
+9. REGISTRO DEL PEDIDO Y DESCUENTO DE STOCK  (pedidos/servicios.py)
+---------------------------------------------------------------------
+
+Es la parte más importante del sistema.
+
+QUÉ HACE: crea el pedido con sus productos y descuenta el stock.
+O se hace TODO, o no se hace NADA.
+
+DÓNDE ESTÁ:  crear_pedido_desde_carrito()  (líneas 16-51)
+  - with transaction.atomic() (línea 28): todo lo que está adentro
+    es una sola transacción. Si algo falla, la base de datos vuelve
+    a como estaba (no queda un pedido a medias).
+  - El descuento de stock (líneas 33-35) es un UPDATE con condición:
+        Producto.objects.filter(pk=..., stock__gte=cantidad)
+                        .update(stock=F('stock') - cantidad)
+    Solo descuenta si todavía hay stock suficiente. F('stock') hace
+    la resta en la base de datos, no en Python. Así, si dos clientes
+    compran la última unidad al mismo tiempo, solo uno lo logra.
+  - Si no alcanza (líneas 36-38), lanza StockInsuficiente y la
+    transacción se deshace entera.
+  - El precio se copia al detalle del pedido (línea 42): si después
+    cambia el precio del producto, el pedido viejo no se altera.
+  - bulk_create (línea 46): guarda todos los renglones juntos.
+
+MODELOS:  pedidos/models.py
+  - Pedido (líneas 16-84) y DetallePedido (líneas 87-110).
+  - Reglas en la base: un mismo producto no puede repetirse en un
+    pedido y la cantidad es al menos 1 (líneas 98-101).
+
+CLASES: Clase 9 (ORM, F(), transacciones), Clase 1 (capa de lógica
+de negocio separada de la presentación).
+
+
+---------------------------------------------------------------------
+10. ESTADOS DEL PEDIDO  (pedidos/models.py)
+---------------------------------------------------------------------
+
+QUÉ HACE: Pendiente -> Pagado -> Enviado, o Cancelado desde
+Pendiente o Pagado. Al cancelar se devuelve el stock.
+
+DÓNDE ESTÁ:
+  - Los estados (líneas 17-21) y las transiciones permitidas
+    (TRANSICIONES, líneas 24-29).
+  - cambiar_estado() (líneas 70-84):
+      * select_for_update() (línea 74) bloquea el pedido mientras se
+        cambia, para que dos empleados no lo cancelen a la vez.
+      * Si la transición no está permitida lanza TransicionInvalida
+        (líneas 75-78).
+      * Si se cancela, suma de vuelta el stock de cada producto con
+        F('stock') + cantidad (líneas 79-81).
+  - pedidos/forms.py, CambiarEstadoForm (líneas 53-67): en la lista
+    solo aparecen los estados a los que el pedido puede pasar.
+  - pedidos/views.py, CambiarEstadoView (líneas 177-195): la vista
+    que usa el empleado; solo acepta POST.
+
+CLASES: Clase 9 (ORM y transacciones), Clase 11 (formularios).
+
+
+---------------------------------------------------------------------
+11. HISTORIAL Y GESTIÓN DE PEDIDOS  (pedidos/views.py)
+---------------------------------------------------------------------
+
+  - pedidos_con_detalles() (líneas 17-21): trae el pedido, su
+    cliente y sus productos en 3 consultas fijas usando
+    select_related y prefetch_related (evita el problema N+1).
+  - MisPedidosView (líneas 107-116): el cliente ve SOLO sus pedidos
+    (filter(usuario=self.request.user), línea 114).
+  - PedidoDetailView (líneas 119-134): si un cliente intenta ver el
+    pedido de otro recibe "404 no encontrado" (líneas 123-128): ni
+    siquiera se entera de que existe.
+  - PedidoGestionListView (líneas 139-174): todos los pedidos, para
+    el personal, con búsqueda por número, email o nombre y filtros
+    por estado y fechas.
+
+CLASES: Clase 9 (ORM: select_related, prefetch_related, annotate),
+Clase 12 (permisos), Clase 7 (ListView, DetailView).
+
+
+---------------------------------------------------------------------
+12. REDIRECCIÓN SEGURA DESPUÉS DE UNA ACCIÓN  (carrito/views.py)
+---------------------------------------------------------------------
+
+QUÉ HACE: después de agregar al carrito, ajustar stock, etc.,
+vuelve a la página donde estaba el usuario.
+
+DÓNDE ESTÁ:  volver()  (líneas 13-20)
+  Usa url_has_allowed_host_and_scheme() para aceptar SOLO
+  direcciones de este mismo sitio. Si alguien manipula el
+  formulario para mandar al usuario a otra página
+  ("open redirect"), se ignora y vuelve a la página por defecto.
+  La usan carrito/views.py y catalogo/views.py (líneas 160 y 172).
+  Hay un test que lo comprueba: catalogo/tests.py,
+  test_siguiente_solo_acepta_rutas_internas.
+
+CLASES: Clase 7 ("Cuidado con el open redirect").
+
+
+---------------------------------------------------------------------
+13. PANEL DE GESTIÓN Y REPORTES  (panel/views.py)
+---------------------------------------------------------------------
+
+  - InicioPanelView (líneas 19-38): lo que el personal tiene que
+    atender hoy: cuántos pedidos hay en cada estado (agrupados en
+    la base con annotate + Count, línea 27), productos agotados,
+    productos con stock bajo (5 o menos) y pedidos pendientes.
+  - ReportesView (líneas 41-78), solo Administrador:
+      * total facturado, cantidad de pedidos y ticket promedio
+        (aggregate, líneas 51-53);
+      * ventas por mes del último año (TruncMonth, líneas 55-60);
+      * productos más vendidos y ventas por categoría, calculando
+        cantidad x precio en la base con F() (líneas 62-72);
+      * los 5 mejores clientes (líneas 73-76).
+    Solo cuentan los pedidos Pagados y Enviados (línea 16).
+
+CLASES: Clase 9 (ORM: aggregate, annotate, F, funciones de fecha).
+
+
+---------------------------------------------------------------------
+14. PLANTILLAS Y DISEÑO  (templates/)
+---------------------------------------------------------------------
+
+  - templates/base.html: la plantilla base con el menú, los
+    mensajes y el pie. Las demás páginas la extienden con
+    {% extends 'base.html' %} y completan {% block contenido %}.
+  - templates/includes/: piezas que se reutilizan con {% include %}:
+    _campo.html (un campo de formulario), _errores_form.html y
+    _paginacion.html.
+  - templates/403.html, 404.html y 500.html: páginas de error
+    propias.
+  - Bootstrap 5 (Clase 3) para el diseño: grilla, cards, tablas,
+    formularios, badges y el modal de confirmación.
+  - BootstrapMixin en usuarios/forms.py (líneas 19-40): agrega las
+    clases de Bootstrap a todos los campos de los formularios y los
+    marca en rojo si tienen error. Así no se repite en cada form.
+  - Filtros propios en pedidos/templatetags/tienda.py:
+      * badge_estado (líneas 14-18): la etiqueta de color de cada
+        estado del pedido, con ícono.
+      * pesos (líneas 21-29): muestra los precios en formato
+        argentino ($ 12.345,67).
+  - Modal de confirmación (al vaciar el carrito o cancelar un
+    pedido): HTML al final de templates/base.html y su lógica en
+    static/js/confirmar.js. Reemplaza al cartel del navegador.
+
+CLASES: Clase 10 (plantillas, herencia, include, DRY), Clase 3
+(Bootstrap).
+
+
+---------------------------------------------------------------------
+15. ADMIN DE DJANGO PERSONALIZADO  (admin.py de cada app)
+---------------------------------------------------------------------
+
+  - catalogo/admin.py, ProductoAdmin (línea 40 en adelante):
+    miniatura de la foto, búsqueda, filtros laterales (incluido un
+    filtro propio de stock, StockFilter, línea 22) y edición del
+    stock y de "activo" directamente desde el listado
+    (list_editable, línea 43).
+  - pedidos/admin.py:
+      * DetallePedidoInline (líneas 7-23): los productos del pedido
+        se ven dentro del pedido, en solo lectura.
+      * Acciones para marcar varios pedidos como Pagado, Enviado o
+        Cancelado de una vez (líneas 61-87); usan cambiar_estado(),
+        así también reponen el stock al cancelar.
+  - usuarios/admin.py: muestra cuántos pedidos tiene cada usuario.
+
+CLASES: Clase 6 (panel de administración automático).
+
+
+---------------------------------------------------------------------
+16. DATOS DE PRUEBA  (comando cargar_datos_demo)
+---------------------------------------------------------------------
+
+  catalogo/management/commands/cargar_datos_demo.py
+  Comando propio:  python manage.py cargar_datos_demo
+  Crea las 5 categorías, los 17 productos con sus fotos (que están
+  en catalogo/datos_demo/imagenes/), los 3 usuarios de prueba y 3
+  pedidos de ejemplo. Los pedidos los crea con el mismo servicio
+  que usa la tienda (crear_pedido_desde_carrito, líneas 144-160),
+  así el stock queda coherente. Se puede correr varias veces sin
+  duplicar nada.
+
+
+---------------------------------------------------------------------
+17. TESTS AUTOMÁTICOS  (tests.py de cada app)
+---------------------------------------------------------------------
+
+Comando:  python manage.py test     (38 tests)
+
+  - usuarios/tests.py: registro como Cliente, redirección según el
+    rol, permisos y respuestas 403.
+  - catalogo/tests.py: filtros del catálogo, cantidad fija de
+    consultas (sin N+1), gestión de productos, redirección segura y
+    que un usuario sin sesión vaya al login.
+  - pedidos/tests.py: límites de stock del carrito, checkout dentro
+    de una transacción, cambios de estado con devolución de stock y
+    que un cliente no pueda ver pedidos ajenos.
+
+
+---------------------------------------------------------------------
+18. RESUMEN: CLASE -> DÓNDE SE VE EN EL PROYECTO
+---------------------------------------------------------------------
+
+  Clase 1  Arquitectura en capas, MVC,     Apps separadas; lógica de
+           seguridad del backend           negocio en pedidos/servicios.py
+  Clase 2  HTTP, GET/POST, códigos         Solo POST para modificar;
+           de estado                       403 / 404 propios
+  Clase 3  Bootstrap                       templates/ (Bootstrap 5)
+  Clase 6  Django, MVT, settings, apps     config/, una app por tema,
+                                           admin
+  Clase 7  URLs, vistas de función y       urls.py de cada app,
+           de clase, open redirect         views.py, volver()
+  Clase 9  ORM y migraciones               models.py, migrations/,
+                                           consultas de panel/views.py
+  Clase 10 Plantillas, herencia, DRY       base.html, includes/,
+                                           templatetags/tienda.py
+  Clase 11 Formularios y validación        forms.py de cada app
+  Clase 12 Sesiones y autenticación,       carrito/carrito.py,
+           mixins de permisos              usuarios/roles.py, mixins
+                                           en las vistas
