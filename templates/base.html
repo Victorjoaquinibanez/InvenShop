@@ -101,8 +101,29 @@
   </div>
 </footer>
 
+{# Modal de confirmación reutilizable: lo usan los forms con data-confirmar (ver static/js/confirmar.js) #}
+<div class="modal fade" id="modalConfirmar" tabindex="-1" aria-labelledby="modalConfirmarTitulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h2 class="modal-title h5 d-flex align-items-center gap-2" id="modalConfirmarTitulo">¿Estás seguro?</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body d-flex gap-3 align-items-start">
+        <i class="bi bi-exclamation-triangle-fill text-warning fs-3" aria-hidden="true"></i>
+        <p class="mb-0 pt-1" data-mensaje></p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" data-aceptar>Aceptar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="{% static 'js/confirmar.js' %}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

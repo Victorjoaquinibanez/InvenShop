@@ -75,7 +75,9 @@
 
       <div class="d-flex justify-content-between mt-3">
         <a href="{% url 'catalogo:lista' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Seguir comprando</a>
-        <form method="post" action="{% url 'carrito:vaciar' %}" onsubmit="return confirm('¿Vaciar el carrito?');">
+        <form method="post" action="{% url 'carrito:vaciar' %}" data-confirmar-titulo="Vaciar carrito"
+              data-confirmar="Se van a quitar todos los productos de tu carrito. Esta acción no se puede deshacer."
+              data-confirmar-boton="Sí, vaciar">
           {% csrf_token %}
           <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash"></i> Vaciar carrito</button>
         </form>

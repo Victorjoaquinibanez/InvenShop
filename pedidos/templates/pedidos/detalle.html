@@ -77,7 +77,10 @@
         <div class="card-body">
           <h2 class="h6 text-muted text-uppercase">Cambiar estado</h2>
           <form method="post" action="{% url 'pedidos:cambiar_estado' pedido.pk %}" class="d-flex gap-2"
-                onsubmit="return this.estado.value !== 'Cancelado' || confirm('¿Cancelar el pedido? Se repondrá el stock de sus productos.');">
+                data-confirmar-campo="estado" data-confirmar-valor="Cancelado"
+                data-confirmar-titulo="Cancelar pedido"
+                data-confirmar="Se va a cancelar el pedido y se repondrá el stock de sus productos."
+                data-confirmar-boton="Sí, cancelar pedido">
             {% csrf_token %}
             {{ form_estado.estado }}
             <button type="submit" class="btn btn-marca">Aplicar</button>
