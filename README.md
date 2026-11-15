@@ -60,11 +60,17 @@ En Linux o Mac cambian dos comandos: `source venv/bin/activate` y `cp .env.examp
 
 Los crea `cargar_datos_demo`. Todos tienen la contraseña **`InvenShop2026!`**.
 
-| Rol | Email |
-|---|---|
-| Administrador | admin@invenshop.com |
-| Empleado | empleado@invenshop.com |
-| Cliente | cliente@invenshop.com |
+| Rol | Nombre | Email |
+|---|---|---|
+| Administrador | Ana Gómez | ana.gomez@invenshop.com |
+| Empleado | Esteban Ruiz | esteban.ruiz@invenshop.com |
+| Cliente | Carla Medina | carla.medina@example.com |
+| Cliente | Martín Herrera | martin.herrera@example.com |
+| Cliente | Sofía Ledesma | sofia.ledesma@example.com |
+| Cliente | Julián Paz | julian.paz@example.com |
+| Cliente | Valentina Ríos | valentina.rios@example.com |
+
+También carga 16 pedidos de los últimos seis meses, en los cuatro estados, para que el panel y los reportes tengan datos.
 
 ## Tests
 

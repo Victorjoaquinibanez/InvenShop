@@ -139,14 +139,14 @@ Muestra una lista de líneas que terminan en "OK".
 8. CARGAR LOS DATOS DE PRUEBA
 ---------------------------------------------------------------------
 
-Carga categorías, productos con foto, los 3 usuarios de prueba y
-algunos pedidos, para que quede igual que en la compu original:
+Carga categorías, productos con foto, los usuarios de prueba y
+16 pedidos de ejemplo, para que quede igual que en la compu original:
 
     .\venv\Scripts\python.exe manage.py cargar_datos_demo
 
 Al final tiene que decir algo como:
 
-    Listo: 5 categorías, 17 productos (17 nuevos, 17 imágenes cargadas), 3 pedidos.
+    Listo: 5 categorías, 17 productos (17 nuevos, 17 imágenes cargadas), 16 pedidos.
 
 Se puede correr más de una vez: no duplica nada.
 
@@ -164,9 +164,11 @@ Para apagar el servidor: Ctrl + C en la terminal.
 
 USUARIOS DE PRUEBA (todos con la contraseña  InvenShop2026! ):
 
-  Administrador   admin@invenshop.com
-  Empleado        empleado@invenshop.com
-  Cliente         cliente@invenshop.com
+  Administrador   ana.gomez@invenshop.com      (Ana Gómez)
+  Empleado        esteban.ruiz@invenshop.com   (Esteban Ruiz)
+  Cliente         carla.medina@example.com     (Carla Medina)
+
+Hay 4 clientes más; la lista completa está en GUIA-InvenShop.txt.
 
 Qué puede hacer cada uno está explicado en GUIA-InvenShop.txt.
 

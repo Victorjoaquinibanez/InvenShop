@@ -9,14 +9,21 @@
 1. USUARIOS DE PRUEBA
 ---------------------------------------------------------------------
 
-Los tres usuarios tienen la misma contraseña:  InvenShop2026!
+Todos los usuarios tienen la misma contraseña:  InvenShop2026!
 (con I y S mayúsculas y el signo ! al final)
 
-  ROL             EMAIL                        CONTRASEÑA
-  -------------   --------------------------   --------------
-  Administrador   admin@invenshop.com          InvenShop2026!
-  Empleado        empleado@invenshop.com       InvenShop2026!
-  Cliente         cliente@invenshop.com        InvenShop2026!
+  ROL             NOMBRE            EMAIL
+  -------------   ---------------   ------------------------------
+  Administrador   Ana Gómez         ana.gomez@invenshop.com
+  Empleado        Esteban Ruiz      esteban.ruiz@invenshop.com
+  Cliente         Carla Medina      carla.medina@example.com
+  Cliente         Martín Herrera    martin.herrera@example.com
+  Cliente         Sofía Ledesma     sofia.ledesma@example.com
+  Cliente         Julián Paz        julian.paz@example.com
+  Cliente         Valentina Ríos    valentina.rios@example.com
+
+Ana es la dueña del comercio y Esteban su empleado; los clientes
+usan example.com, un dominio reservado para ejemplos.
 
 Son cuentas de prueba creadas por el comando "cargar_datos_demo".
 Si algún día se publica en un servidor real, hay que cambiarlas.
@@ -76,7 +83,7 @@ se descuenta, y si el pedido se cancela se devuelve.
      El carrito no se pierde al iniciar sesión.
 
 
->> CLIENTE   (cliente@invenshop.com)
+>> CLIENTE   (por ejemplo carla.medina@example.com)
    Todo lo del visitante, y además:
    - Hacer pedidos (comprar).
    - Ver "Mis pedidos": su historial con fecha, estado y total,
@@ -90,7 +97,7 @@ se descuenta, y si el pedido se cancela se devuelve.
    - Cambiar el estado de un pedido.
 
 
->> EMPLEADO   (empleado@invenshop.com)
+>> EMPLEADO   (esteban.ruiz@invenshop.com)
    Al iniciar sesión entra directo al Panel de gestión:
    - INICIO: cuántos pedidos hay en cada estado, los pedidos
      pendientes y los productos con poco stock.
@@ -108,7 +115,7 @@ se descuenta, y si el pedido se cancela se devuelve.
    - Hacer pedidos (es personal del comercio, no cliente).
 
 
->> ADMINISTRADOR   (admin@invenshop.com)
+>> ADMINISTRADOR   (ana.gomez@invenshop.com)
    Acceso total. Todo lo del empleado, y además:
    - USUARIOS: ver todas las cuentas, cambiar el rol de un
      usuario (Cliente / Empleado / Administrador) y activar o
@@ -195,5 +202,7 @@ La foto siempre se muestra entera, nunca se recorta.
   - 17 productos con foto. Algunos están agotados (Azúcar 1 kg,
     Mouse inalámbrico) y otros con poco stock, para mostrar
     esos casos.
-  - 3 pedidos del cliente de prueba: uno Enviado, uno Pagado y
-    uno Pendiente.
+  - 7 usuarios: la administradora, un empleado y 5 clientes.
+  - 16 pedidos de los últimos 6 meses, de los 5 clientes:
+    10 Enviados, 2 Pagados, 2 Pendientes y 2 Cancelados.
+    Así el panel y los reportes por mes tienen datos.

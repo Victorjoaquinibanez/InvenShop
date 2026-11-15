@@ -1,17 +1,19 @@
 """
-Carga datos de prueba: categorías, productos, un usuario por rol y algunos pedidos.
+Carga datos de prueba: categorías, productos, usuarios de cada rol y pedidos de los últimos meses.
 
     python manage.py cargar_datos_demo
 
 Se puede correr varias veces: no duplica lo que ya existe.
 """
 
+from datetime import timedelta
 from decimal import Decimal
 from pathlib import Path
 
 from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from catalogo.models import Categoria, Producto
 from pedidos.models import Pedido
@@ -72,11 +74,55 @@ IMAGENES = {
     'Yerba mate 1 kg': 'yerba-mate-1kg.jpg',
 }
 
+# (email, nombre, apellido, rol, teléfono, dirección, ciudad, código postal)
+# El personal usa el dominio del comercio; los clientes, example.com (dominio reservado para ejemplos)
 USUARIOS = [
-    ('admin@invenshop.com', 'Ana', 'Administradora', Usuario.Rol.ADMIN),
-    ('empleado@invenshop.com', 'Esteban', 'Empleado', Usuario.Rol.EMPLEADO),
-    ('cliente@invenshop.com', 'Carla', 'Cliente', Usuario.Rol.CLIENTE),
+    ('ana.gomez@invenshop.com', 'Ana', 'Gómez', Usuario.Rol.ADMIN,
+     '385 421-3390', 'Av. Belgrano Sur 1450', 'Santiago Del Estero', '4200'),
+    ('esteban.ruiz@invenshop.com', 'Esteban', 'Ruiz', Usuario.Rol.EMPLEADO,
+     '385 433-1187', 'Pellegrini 655', 'Santiago Del Estero', '4200'),
+    ('carla.medina@example.com', 'Carla', 'Medina', Usuario.Rol.CLIENTE,
+     '385 512-4471', 'Av. Libertad 1234', 'Santiago Del Estero', '4200'),
+    ('martin.herrera@example.com', 'Martín', 'Herrera', Usuario.Rol.CLIENTE,
+     '385 598-2260', 'Independencia 873', 'Santiago Del Estero', '4200'),
+    ('sofia.ledesma@example.com', 'Sofía', 'Ledesma', Usuario.Rol.CLIENTE,
+     '385 467-9015', 'Besares 412', 'La Banda', '4300'),
+    ('julian.paz@example.com', 'Julián', 'Paz', Usuario.Rol.CLIENTE,
+     '385 530-7748', 'Av. Roca 2210', 'Santiago Del Estero', 'G4200ABC'),
+    ('valentina.rios@example.com', 'Valentina', 'Ríos', Usuario.Rol.CLIENTE,
+     '385 482-3356', 'Mitre 1580', 'La Banda', '4300'),
 ]
+
+# Pedidos de ejemplo: (hace cuántos días, email del cliente, productos, estado final).
+# Repartidos en seis meses para que los reportes por mes tengan datos.
+PEDIDOS = [
+    (170, 'carla.medina@example.com', [('Yerba mate 1 kg', 2), ('Agua mineral 2 L', 6)], 'Enviado'),
+    (160, 'martin.herrera@example.com', [('Resma A4 500 hojas', 1), ('Birome azul x10', 1)], 'Enviado'),
+    (140, 'sofia.ledesma@example.com', [('Detergente 750 ml', 2), ('Lavandina 2 L', 2)], 'Enviado'),
+    (120, 'julian.paz@example.com', [('Auriculares in-ear', 1)], 'Enviado'),
+    (110, 'carla.medina@example.com', [('Fideos tirabuzón 500 g', 4), ('Arroz largo fino 1 kg', 2),
+                                       ('Gaseosa cola 2,25 L', 2)], 'Enviado'),
+    (95, 'valentina.rios@example.com', [('Cuaderno universitario 84 h', 3), ('Birome azul x10', 1)], 'Enviado'),
+    (80, 'martin.herrera@example.com', [('Cargador USB-C 20 W', 1)], 'Cancelado'),
+    (70, 'sofia.ledesma@example.com', [('Yerba mate 1 kg', 1), ('Gaseosa cola 2,25 L', 2)], 'Enviado'),
+    (55, 'julian.paz@example.com', [('Resma A4 500 hojas', 2)], 'Enviado'),
+    (40, 'carla.medina@example.com', [('Detergente 750 ml', 1), ('Lavandina 2 L', 1),
+                                      ('Agua mineral 2 L', 4)], 'Enviado'),
+    (25, 'valentina.rios@example.com', [('Auriculares in-ear', 1), ('Cargador USB-C 20 W', 1)], 'Enviado'),
+    (12, 'martin.herrera@example.com', [('Fideos tirabuzón 500 g', 3), ('Arroz largo fino 1 kg', 2)], 'Pagado'),
+    (6, 'sofia.ledesma@example.com', [('Cuaderno universitario 84 h', 2)], 'Pagado'),
+    (3, 'julian.paz@example.com', [('Gaseosa cola 2,25 L', 1), ('Agua mineral 2 L', 2)], 'Cancelado'),
+    (1, 'carla.medina@example.com', [('Detergente 750 ml', 2), ('Auriculares in-ear', 1)], 'Pendiente'),
+    (0, 'valentina.rios@example.com', [('Yerba mate 1 kg', 2), ('Birome azul x10', 1)], 'Pendiente'),
+]
+
+# Estados por los que pasa cada pedido hasta su estado final (respetando las transiciones del modelo)
+CAMINO = {
+    'Pendiente': [],
+    'Pagado': ['Pagado'],
+    'Enviado': ['Pagado', 'Enviado'],
+    'Cancelado': ['Cancelado'],
+}
 
 
 class SesionFalsa(dict):
@@ -91,7 +137,7 @@ class PedidoFalso:
 
 
 class Command(BaseCommand):
-    help = 'Carga categorías, productos, usuarios de prueba (uno por rol) y algunos pedidos.'
+    help = 'Carga categorías, productos, usuarios de prueba de cada rol y pedidos de los últimos meses.'
 
     @transaction.atomic
     def handle(self, *args, **options):
@@ -109,24 +155,24 @@ class Command(BaseCommand):
         imagenes_cargadas = self._cargar_imagenes()
 
         usuarios = {}
-        for email, nombre, apellido, rol in USUARIOS:
+        for email, nombre, apellido, rol, telefono, *_ in USUARIOS:
             usuario = Usuario.objects.filter(email=email).first()
             if usuario is None:
                 crear = Usuario.objects.create_superuser if rol == Usuario.Rol.ADMIN else Usuario.objects.create_user
-                usuario = crear(email, PASSWORD_DEMO, nombre=nombre, apellido=apellido, rol=rol, telefono='385 400-0000')
-            usuarios[rol] = usuario
+                usuario = crear(email, PASSWORD_DEMO, nombre=nombre, apellido=apellido, rol=rol, telefono=telefono)
+            usuarios[email] = usuario
 
-        cliente = usuarios[Usuario.Rol.CLIENTE]
-        if not cliente.pedidos.exists():
-            self._pedidos_de_ejemplo(cliente)
+        # Solo en una base sin pedidos, para no mezclarlos con pedidos reales
+        if not Pedido.objects.exists():
+            self._pedidos_de_ejemplo(usuarios)
 
         self.stdout.write(self.style.SUCCESS(
             f'Listo: {Categoria.objects.count()} categorías, {Producto.objects.count()} productos '
             f'({productos_nuevos} nuevos, {imagenes_cargadas} imágenes cargadas), {Pedido.objects.count()} pedidos.'
         ))
         self.stdout.write('Usuarios de prueba (contraseña: %s):' % PASSWORD_DEMO)
-        for email, _, _, rol in USUARIOS:
-            self.stdout.write(f'  {Usuario.Rol(rol).label:<14} {email}')
+        for email, nombre, apellido, rol, *_ in USUARIOS:
+            self.stdout.write(f'  {Usuario.Rol(rol).label:<14} {email:<30} {nombre} {apellido}')
 
     def _cargar_imagenes(self):
         """Asigna la foto a los productos que todavía no tienen (no pisa una imagen ya cargada)."""
@@ -141,22 +187,22 @@ class Command(BaseCommand):
             cargadas += 1
         return cargadas
 
-    def _pedidos_de_ejemplo(self, cliente):
+    def _pedidos_de_ejemplo(self, usuarios):
+        """Crea los pedidos con el mismo servicio que usa la tienda, así el stock queda coherente."""
         from carrito.carrito import Carrito
 
-        envio = {'direccion': 'Av. Belgrano Sur 1234', 'ciudad': 'Santiago Del Estero',
-                 'codigo_postal': '4200', 'telefono_contacto': '385 400-0000'}
-        compras = [
-            ([('Yerba mate 1 kg', 2), ('Agua mineral 2 L', 6)], Pedido.Estado.ENVIADO),
-            ([('Cuaderno universitario 84 h', 3), ('Birome azul x10', 1)], Pedido.Estado.PAGADO),
-            ([('Detergente 750 ml', 2), ('Auriculares in-ear', 1)], Pedido.Estado.PENDIENTE),
-        ]
-        for items, estado_final in compras:
+        datos = {email: (telefono, direccion, ciudad, cp) for email, *_, telefono, direccion, ciudad, cp in USUARIOS}
+        ahora = timezone.now()
+        for dias, email, items, estado_final in PEDIDOS:
+            telefono, direccion, ciudad, codigo_postal = datos[email]
+            envio = {'direccion': direccion, 'ciudad': ciudad,
+                     'codigo_postal': codigo_postal, 'telefono_contacto': telefono}
             carrito = Carrito(PedidoFalso())
             for nombre, cantidad in items:
                 carrito.agregar(Producto.objects.get(nombre=nombre), cantidad)
-            pedido = crear_pedido_desde_carrito(cliente, carrito, envio)
-            if estado_final in (Pedido.Estado.PAGADO, Pedido.Estado.ENVIADO):
-                pedido.cambiar_estado(Pedido.Estado.PAGADO)
-            if estado_final == Pedido.Estado.ENVIADO:
-                pedido.cambiar_estado(Pedido.Estado.ENVIADO)
+            pedido = crear_pedido_desde_carrito(usuarios[email], carrito, envio)
+            for estado in CAMINO[estado_final]:
+                pedido.cambiar_estado(estado)
+            # La fecha se pone en el pasado (auto_now_add no deja elegirla al crear)
+            fecha = ahora - timedelta(days=dias, hours=dias % 9, minutes=(dias * 7) % 60)
+            Pedido.objects.filter(pk=pedido.pk).update(fecha_creacion=fecha)

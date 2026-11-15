@@ -1,0 +1,364 @@
+=====================================================================
+                 INVENSHOP - GUION PARA LA DEFENSA
+          Programación IV - ITSE - Trabajo Final 2026
+
+  Grupo:  Víctor Joaquín Ibáñez
+          Luca Sebastián Ríos Santillán
+          Miguel Ángel Stefanisi
+=====================================================================
+
+La nota es grupal e individual: la profe puede preguntarle a
+cualquiera de los tres por cualquier parte del código. Cada uno
+presenta su bloque, pero LOS TRES tienen que leer todo este archivo
+y CODIGO-InvenShop.txt.
+
+Regla de la profe: no leer el código línea por línea. Explicar el
+PORQUÉ y el PARA QUÉ de cada bloque, y cómo viajan los datos desde
+la petición hasta la respuesta.
+
+
+---------------------------------------------------------------------
+1. ANTES DE PASAR AL FRENTE (requisitos obligatorios)
+---------------------------------------------------------------------
+
+[ ] Datos de prueba recién cargados (ver punto 1.1). No crear
+    registros con nombres de relleno ("asdf", "prueba", "test").
+[ ] Entorno virtual activado en la terminal:
+        .\venv\Scripts\Activate.ps1
+    Si PowerShell no deja: primero
+        Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+    (solo vale para esa terminal). Al activarse aparece (venv)
+    al principio de la línea.
+[ ] Servidor corriendo:   python manage.py runserver
+[ ] Navegador abierto en http://127.0.0.1:8000, con una ventana
+    normal y dos de incógnito (una por usuario), así no hay que
+    cerrar sesión durante la demo.
+[ ] VS Code abierto con estas pestañas, en este orden:
+      catalogo/models.py         pedidos/models.py
+      config/urls.py             pedidos/urls.py
+      catalogo/views.py          pedidos/views.py
+      pedidos/servicios.py       pedidos/forms.py
+      usuarios/roles.py          templates/base.html
+      .env.example
+[ ] Credenciales anotadas A MANO en un papel (lo pide la profe):
+
+      Contraseña de todos:  InvenShop2026!
+      Administradora   Ana Gómez        ana.gomez@invenshop.com
+      Empleado         Esteban Ruiz     esteban.ruiz@invenshop.com
+      Cliente          Carla Medina     carla.medina@example.com
+
+[ ] El PowerPoint abierto en la diapositiva 1. Las dos últimas
+    diapositivas (anexo) tienen capturas por si falla la demo.
+    El proyecto no usa APIs externas: funciona sin internet
+    (solo Bootstrap viene de internet; si no hay conexión la
+    página se ve sin estilos pero anda igual).
+
+1.1 Dejar los datos como nuevos (hacerlo la noche anterior y
+    practicar la demo; después repetirlo antes de presentar):
+
+    Con el servidor apagado (Ctrl + C):
+        del db.sqlite3
+        rmdir /s /q media\productos        (en "Símbolo del sistema")
+        Remove-Item -Recurse media\productos   (en PowerShell)
+        python manage.py migrate
+        python manage.py cargar_datos_demo
+
+    Quedan 7 usuarios, 17 productos y 16 pedidos de los últimos
+    seis meses (2 Pendientes, 2 Pagados, 10 Enviados, 2 Cancelados).
+
+
+---------------------------------------------------------------------
+2. REPARTO Y TIEMPOS  (unos 24 minutos + preguntas)
+---------------------------------------------------------------------
+
+  BLOQUE                              QUIÉN     TIEMPO   DIAPOSITIVAS
+  ---------------------------------   -------   ------   ------------
+  Apertura                            Víctor    1 min    1-2
+  1. Problema y alcance               Víctor    2 min    3-4
+  2. Arquitectura y modelo de datos   Víctor    4 min    5-7
+  3. Demo en vivo y plantillas        Luca      8 min    8-10
+  4. Inmersión en el código           Miguel    9 min    11-17
+  Cierre                              Víctor    1 min    18-19
+  5. Preguntas                        Los tres  -
+
+Las notas del orador de cada diapositiva dicen qué decir.
+
+
+---------------------------------------------------------------------
+3. BLOQUE 1 y 2 - VÍCTOR
+---------------------------------------------------------------------
+
+Problema: un comercio de Santiago del Estero lleva ventas y stock
+en Excel; se duplican datos, el stock queda mal y no vende online.
+
+Usuarios finales: la dueña (Administradora), el empleado y los
+clientes.
+
+Alcance: catálogo, carrito, compra en dos pasos, pedidos con
+estados, panel, reportes, usuarios. NO incluye cobro con tarjeta
+ni envío real: el empleado marca el pedido como "Pagado".
+
+Apps (por qué así): cada app es un tema del negocio.
+  - usuarios: quién entra y qué puede hacer.
+  - catalogo: qué se vende.
+  - carrito: lo que el visitante va eligiendo (en la sesión).
+  - pedidos: lo que se vendió; la regla de negocio en servicios.py.
+  - panel: solo consulta las otras para el inicio y los reportes.
+  Dependencias: pedidos usa usuarios y catálogo; carrito lee
+  productos; panel lee de todas. Ninguna depende de panel.
+
+Modelo de datos (mostrar diapositiva 6 y abrir pedidos/models.py):
+  - Usuario 1-N Pedido            on_delete=PROTECT
+  - Pedido 1-N DetallePedido      on_delete=CASCADE
+  - Producto 1-N DetallePedido    on_delete=PROTECT
+  - Categoria 1-N Producto        on_delete=PROTECT
+  - Usuario N-M Group             (viene de PermissionsMixin)
+
+  Idea para explicarlo: PROTECT en todo lo que, si se borra,
+  destruye el historial de ventas. CASCADE solo en el detalle,
+  que no tiene sentido sin su pedido.
+
+Lógica en el modelo:
+  - CheckConstraint precio > 0 y cantidad >= 1; UniqueConstraint
+    (un producto una sola vez por pedido): las hace cumplir la base.
+  - @property: agotado, subtotal, numero, es_personal.
+  - Pedido.cambiar_estado(): valida la transición y, si se
+    cancela, devuelve el stock.
+
+
+---------------------------------------------------------------------
+4. BLOQUE 3 - LUCA: DEMO EN VIVO (paso a paso)
+---------------------------------------------------------------------
+
+1) VISITANTE (ventana normal, sin sesión)
+   - Catálogo: buscar "yerba"; filtrar "Bebidas"; ordenar por precio.
+   - Entrar a "Jugo de naranja 1 L" (stock 3) e intentar agregar 5:
+     aparece el aviso "Solo hay 3 unidades". Agregar 1.
+   - Agregar un "Cuaderno". Ir al carrito, cambiar una cantidad.
+   - Tocar "Vaciar carrito" y mostrar la ventana de confirmación;
+     tocar Cancelar (no vaciarlo).
+
+2) CLIENTE - Carla Medina (misma ventana)
+   - "Ingresá para continuar" -> iniciar sesión: el carrito sigue.
+   - Datos de envío: poner código postal "12" -> error en rojo.
+     Corregir a 4200 -> Revisar y confirmar -> Confirmar pedido.
+   - Mensaje verde "Registramos tu pedido". Ver "Mis pedidos".
+
+3) EMPLEADO - Esteban Ruiz (incógnito 1)
+   - Entra directo al Panel: pedidos por estado y stock bajo.
+   - Productos: anotar el stock de "Detergente 750 ml".
+   - Pedidos -> abrir el #000015 de Carla (Pendiente) -> Cancelado
+     -> aparece la ventana de confirmación -> Aplicar.
+     Volver a Productos: el stock de Detergente subió 2.
+   - Abrir el #000016 de Valentina -> pasarlo a Pagado.
+   - Ajuste rápido: cambiar el stock de un producto desde la lista.
+   - Escribir en la barra 127.0.0.1:8000/panel/reportes/ -> 403.
+
+4) ADMINISTRADORA - Ana Gómez (incógnito 2)
+   - Reportes: facturado, ventas por mes, más vendidos.
+   - Usuarios: buscar "Paz", abrir y mostrar el rol (no guardar).
+   - /admin: lista de pedidos con filtros y búsqueda.
+
+Plantillas (diapositiva 10, abrir templates/base.html):
+  - base.html tiene el menú, los mensajes y el pie; cada página
+    hace {% extends 'base.html' %} y llena {% block contenido %}.
+  - {% static %} para CSS, JS y el ícono; {% for %} y {% if %} para
+    listar y mostrar condicionalmente; {% include %} para piezas
+    repetidas (paginación, campo de formulario).
+  - Las plantillas no calculan: totales, estados y permisos vienen
+    resueltos desde vistas y modelos.
+
+
+---------------------------------------------------------------------
+5. BLOQUE 4 - MIGUEL: INMERSIÓN EN EL CÓDIGO
+---------------------------------------------------------------------
+
+Orden de archivos a abrir y qué decir de cada uno:
+
+1) config/urls.py y pedidos/urls.py
+   include() deriva cada prefijo a su app; app_name = 'pedidos' y
+   name='detalle' permiten usar {% url 'pedidos:detalle' pk %} sin
+   escribir rutas a mano.
+
+2) catalogo/views.py
+   ProductoCreateView (CBV genérica: ya trae el formulario y el
+   guardado) y, más abajo, ajustar_stock (FBV con @login_required,
+   @permission_required y @require_POST: acción corta de un paso).
+
+3) pedidos/views.py -> ConfirmarPedidoView.post
+   La vista NO descuenta stock: llama a crear_pedido_desde_carrito.
+
+4) pedidos/servicios.py
+   transaction.atomic + UPDATE con F('stock') y stock__gte:
+   todo o nada, y nunca se vende la misma última unidad dos veces.
+
+5) pedidos/forms.py
+   clean_codigo_postal, clean_direccion: validan antes de guardar.
+   Errores -> vuelven al formulario en rojo. Confirmaciones ->
+   messages.success, que base.html muestra.
+
+6) usuarios/roles.py y PedidoDetailView.get_queryset
+   Roles = grupos con permisos. Un cliente solo ve SUS pedidos
+   (filter(usuario=request.user)); el de otro da 404.
+
+7) .env.example
+   La SECRET_KEY no está en el código: se lee del .env, que está
+   en .gitignore.
+
+
+---------------------------------------------------------------------
+6. PREGUNTAS PROBABLES Y CÓMO RESPONDERLAS
+---------------------------------------------------------------------
+
+--- A. Modelos ---
+
+P: ¿Por qué PROTECT en Pedido -> Usuario y no CASCADE?
+R: Con CASCADE, borrar un cliente borraría sus pedidos y se
+   perderían ventas ya hechas (y los reportes cambiarían). Con
+   PROTECT, Django no deja borrarlo: se lo desactiva (is_active).
+
+P: ¿Por qué DetallePedido y no un ManyToMany Pedido-Producto?
+R: Porque la relación necesita datos propios: la cantidad y el
+   precio al momento de la compra. Un ManyToMany simple no los
+   guarda; DetallePedido es el "modelo intermedio".
+
+P: ¿Por qué guardan precio_unitario si el producto ya tiene precio?
+R: Para congelarlo: si mañana sube el precio, los pedidos viejos
+   tienen que seguir mostrando lo que se cobró.
+
+P: ¿Qué es una migración?
+R: El archivo que traduce un cambio en models.py a cambios en la
+   base. makemigrations la crea, migrate la aplica.
+
+P: ¿Cómo agregarían un campo "marca" a Producto?
+R: 1) Agregar el campo en catalogo/models.py. 2) makemigrations y
+   migrate. 3) Agregarlo a fields de ProductoForm. 4) Mostrarlo en
+   la plantilla del detalle. (Si es obligatorio, darle un default
+   o null=True para los productos que ya existen.)
+
+--- B. URLs y vistas ---
+
+P: Expliquen el recorrido de una petición.
+R: El navegador pide /pedidos/15/. config/urls.py ve el prefijo
+   pedidos/ y lo manda a pedidos/urls.py, que llama a
+   PedidoDetailView con pk=15. La vista consulta con el ORM (y
+   verifica que el pedido sea del usuario), arma el contexto y
+   renderiza detalle.html. Django devuelve el HTML.
+
+P: ¿Por qué usaron CBV en unos casos y FBV en otros?
+R: CBV cuando Django ya tiene la vista genérica (ListView,
+   CreateView...): menos código. FBV para acciones cortas de un
+   paso (ajustar stock), donde una función con decoradores se lee
+   más directo.
+
+P: ¿Qué pasa si alguien entra por GET a /carrito/vaciar/?
+R: Error 405 (método no permitido): esas vistas solo aceptan POST
+   (http_method_names = ['post'] o @require_POST), porque cambian
+   datos. Hay un test que lo comprueba con el ajuste de stock.
+
+P: ¿Dónde está la lógica de negocio?
+R: En pedidos/servicios.py (crear el pedido) y en los modelos
+   (cambiar_estado). Las vistas solo coordinan; las plantillas
+   solo muestran.
+
+P: ¿Qué es el problema N+1 y cómo lo evitan?
+R: Hacer una consulta por cada fila de un listado. Se evita con
+   select_related (ForeignKey: un JOIN) y prefetch_related
+   (relaciones "muchos": una consulta aparte). Hay un test que
+   fija en 4 la cantidad de consultas del catálogo.
+
+--- C. Formularios ---
+
+P: ¿Cómo validan antes de guardar?
+R: Con formularios de Django: clean_<campo>() valida un campo
+   (código postal, dirección con número) y clean() valida campos
+   juntos (contraseñas iguales). Si falla, no se guarda nada y el
+   error vuelve al formulario.
+
+P: ¿Cómo le avisan al usuario?
+R: Errores: en rojo debajo del campo. Confirmaciones: con
+   django.contrib.messages (messages.success...), que base.html
+   muestra en todas las páginas.
+
+--- D. Seguridad ---
+
+P: ¿Cómo protegen una vista privada?
+R: LoginRequiredMixin (o @login_required) para exigir sesión, y
+   PermissionRequiredMixin (o @permission_required) para exigir el
+   permiso del rol. Sin sesión -> login; sin permiso -> 403.
+
+P: ¿Por qué LoginRequiredMixin va antes de PermissionRequiredMixin?
+R: Los mixins se aplican de izquierda a derecha: primero se fija si
+   hay sesión (si no, manda al login) y recién después el permiso.
+
+P: ¿Cómo funcionan los roles?
+R: Cada rol es un Group con permisos (usuarios/roles.py). Los
+   grupos se crean solos al correr migrate (señal post_migrate) y
+   cada usuario queda en el grupo de su rol al guardarse (señal
+   post_save).
+
+P: ¿Por qué un cliente recibe 404 y no 403 en un pedido ajeno?
+R: Porque la consulta ya filtra por usuario: para él ese pedido
+   no existe. Así no revela que hay un pedido con ese número.
+
+P: ¿Para qué sirve {% csrf_token %}?
+R: Evita que otra página haga enviar un formulario a nuestro
+   sitio con la sesión del usuario (CSRF). Sin el token, Django
+   rechaza el POST con 403.
+
+P: ¿Cómo evitan la inyección SQL?
+R: No escribimos SQL: el ORM arma las consultas con parámetros,
+   así lo que escribe el usuario nunca se ejecuta como código.
+
+P: ¿Dónde está la SECRET_KEY?
+R: En el archivo .env, que no se sube a GitHub (.gitignore).
+   settings.py la lee con python-dotenv y, si falta, no arranca.
+
+P: ¿Qué pasa si dos clientes compran la última unidad a la vez?
+R: El descuento es un UPDATE con la condición stock >= cantidad,
+   dentro de una transacción. La base lo ejecuta de a uno: el
+   primero descuenta, el segundo no encuentra stock, se lanza
+   StockInsuficiente y su pedido se deshace entero.
+
+--- E. Plantillas ---
+
+P: ¿Qué hace {% extends %} y {% block %}?
+R: La página hija hereda base.html y solo reemplaza los bloques
+   que define (título, contenido). El menú y el pie se escriben
+   una sola vez.
+
+P: ¿Para qué {% static %}?
+R: Arma la ruta correcta a CSS, JS e imágenes según STATIC_URL;
+   si cambia la configuración, no hay que tocar las plantillas.
+
+--- Modificaciones hipotéticas ---
+
+P: ¿Cómo agregarían un rol "Repartidor" que solo pase pedidos a
+   Enviado?
+R: Agregar el rol en Usuario.Rol, sus permisos en
+   PERMISOS_POR_ROL (por ejemplo un permiso nuevo
+   "marcar_enviado") y controlar ese permiso en CambiarEstadoView.
+   Correr migrate para que se cree el grupo.
+
+P: ¿Y si quisieran usar PostgreSQL en vez de SQLite?
+R: Solo cambia DATABASES en settings.py (y se instala el driver
+   psycopg). Como todo pasa por el ORM, el resto del código no
+   cambia.
+
+P: ¿Cómo agregarían un descuento a un pedido?
+R: Un campo descuento en Pedido (con migración), el cálculo en
+   crear_pedido_desde_carrito (servicios.py) y mostrarlo en la
+   plantilla. La plantilla no calcula: recibe el total ya hecho.
+
+
+---------------------------------------------------------------------
+7. SI ALGO SALE MAL
+---------------------------------------------------------------------
+
+- La página no carga: mirar la terminal; el servidor tiene que
+  estar corriendo (runserver).
+- Error de SECRET_KEY: falta el .env (ver INSTALACION-InvenShop.txt).
+- Se rompió la demo o quedaron datos raros: usar las capturas del
+  anexo del PowerPoint y seguir.
+- No saben una respuesta: decir cómo lo buscarían en el código
+  (abrir el archivo) antes que inventar.

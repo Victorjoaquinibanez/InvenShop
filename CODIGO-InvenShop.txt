@@ -482,11 +482,15 @@ CLASES: Clase 6 (panel de administración automático).
   catalogo/management/commands/cargar_datos_demo.py
   Comando propio:  python manage.py cargar_datos_demo
   Crea las 5 categorías, los 17 productos con sus fotos (que están
-  en catalogo/datos_demo/imagenes/), los 3 usuarios de prueba y 3
-  pedidos de ejemplo. Los pedidos los crea con el mismo servicio
-  que usa la tienda (crear_pedido_desde_carrito, líneas 144-160),
-  así el stock queda coherente. Se puede correr varias veces sin
-  duplicar nada.
+  en catalogo/datos_demo/imagenes/), 7 usuarios (la administradora,
+  un empleado y 5 clientes, líneas 79-94) y 16 pedidos de los
+  últimos seis meses (PEDIDOS, líneas 98-117).
+  Los pedidos los crea con el mismo servicio que usa la tienda
+  (crear_pedido_desde_carrito, líneas 190-208) y los pasa por los
+  estados con cambiar_estado(), así el stock queda coherente.
+  Después les pone la fecha en el pasado con update(), porque
+  auto_now_add no deja elegirla al crear. Se puede correr varias
+  veces sin duplicar nada.
 
 
 ---------------------------------------------------------------------
